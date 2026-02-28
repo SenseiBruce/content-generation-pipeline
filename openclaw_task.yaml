@@ -23,7 +23,7 @@ task:
 
   # ── Execution ───────────────────────────────────────────────────
   execution:
-    command: python3 run_pipeline.py
+    command: .venv/bin/python run_pipeline.py
     working_directory: /Users/kinshuk.prasad/Documents/Project_X/content-generation-pipeline
     timeout_minutes: 25
     python_version: "3.11"
@@ -46,6 +46,7 @@ task:
       - economictimes.indiatimes.com
       - pib.gov.in
       - news.google.com
+      - localhost:8000
 
   # ── Logging ─────────────────────────────────────────────────────
   logging:
