@@ -9,7 +9,9 @@
     "591e6fe3b0cf0297329b882bf4e4f7d5",
     "722e4d4d24890aada760564d83d86503",
     "9769481b6c03a3046a8c4fc7aef1a3d4",
-    "d6ab2904d0ed43daffab06d7c0abf48e"
+    "d6ab2904d0ed43daffab06d7c0abf48e",
+    "a7f8c3259a0a1f12fe68ef5b0c37a230",
+    "7ef3127d371f22d3f7605c54706bd830"
   ],
   "runs": [
     {
@@ -139,7 +141,19 @@
       "videos_uploaded": 3,
       "status": "success",
       "elapsed_seconds": 257.4
+    },
+    {
+      "timestamp": "2026-02-28T19:50:18.315535",
+      "started_at": "2026-02-28T19:48:36.289426",
+      "stories_fetched": 182,
+      "stories_prioritized": 2,
+      "scripts_generated": 2,
+      "scripts_approved": 0,
+      "scripts_rejected": 2,
+      "videos_produced": 0,
+      "videos_uploaded": 0,
+      "status": "no_approved"
     }
   ],
-  "last_run": "2026-02-28T15:57:56.229549"
+  "last_run": "2026-02-28T19:50:18.315535"
 }

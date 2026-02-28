@@ -4,81 +4,88 @@ agents/voicer.py
 Generates male Indian accent TTS voiceover audio using Coqui TTS (local, free).
 One WAV file per scene, saved to data/media/<story_hash>/voice_<scene_id>.wav
 
-Model: tts_models/en/vctk/vits
-Speaker: p326 (male, neutral, energetic — best match for Indian accent in VCTK)
-
-Falls back to a basic gTTS Google Cloud call if Coqui is not installed,
-but Coqui is strongly preferred for offline / private operation.
+Voice Engine: Jamie Pine's "Voicebox" (Qwen3-TTS)
+Requires the standalone Voicebox server running at http://localhost:8000
+Set VOICEBOX_PROFILE_ID in your .env file to target your custom voice profile.
 """
 
 import os
+import asyncio
 import time
 from pathlib import Path
 from typing import Dict, Optional
 
+from dotenv import load_dotenv
 from pipeline.logger import get_logger
 
 log = get_logger("voicer")
 
+# Load environment variables
+load_dotenv(Path(__file__).parent.parent / ".env")
+
+VOICEBOX_API_URL = os.getenv("VOICEBOX_API_URL", "http://localhost:8000")
+VOICEBOX_PROFILE_ID = os.getenv("VOICEBOX_PROFILE_ID", "")
+
 MEDIA_DIR = Path(__file__).parent.parent / "data" / "media"
 
-# Coqui VCTK male speaker — closest to Indian-neutral accent available locally
-COQUI_MODEL = "tts_models/en/vctk/vits"
-COQUI_SPEAKER = "p326"
 
-# Speed-up ratio for high-energy finance news tone
-SPEED = 1.1
-
-
-def _synthesize_with_coqui(text: str, output_path: Path) -> bool:
+def _synthesize_with_voicebox(text: str, output_path: Path) -> bool:
     """
-    Use Coqui TTS to synthesize a single voice line.
+    Send generation request to the standalone Voicebox API.
+    Voicebox handles all MLX/GPU model loading internally.
     Returns True on success.
     """
+    import requests
+    
+    if not VOICEBOX_PROFILE_ID:
+        log.error("VOICEBOX_PROFILE_ID is not set in .env")
+        log.error("Please create a profile in the Voicebox Web UI and add its ID to .env")
+        return False
+        
     try:
-        from TTS.api import TTS  # type: ignore
-
-        tts = TTS(model_name=COQUI_MODEL, progress_bar=False)
-        tts.tts_to_file(
-            text=text,
-            speaker=COQUI_SPEAKER,
-            file_path=str(output_path),
-            speed=SPEED,
-        )
-        log.debug("Coqui TTS saved: %s", output_path)
+        # Trigger standard generation endpoint to generate and save inside Voicebox DB
+        url = f"{VOICEBOX_API_URL}/generate"
+        payload = {
+            "profile_id": VOICEBOX_PROFILE_ID,
+            "text": text,
+            "language": "en"
+        }
+        
+        # Give a long timeout for TTS inference
+        response = requests.post(url, json=payload, timeout=120)
+        
+        if response.status_code == 202:
+            log.warning("Voicebox model is currently downloading. We need to wait and retry.")
+            return False
+            
+        response.raise_for_status()
+        
+        # Voicebox API returns {"id": "gen_id", "audio_path": "..."}
+        # But we want to download the raw wave file from /audio/{generation_id}
+        gen_data = response.json()
+        generation_id = gen_data.get("id")
+        
+        if not generation_id:
+            log.error("Voicebox API did not return a generation ID: %s", gen_data)
+            return False
+            
+        # Second request to download the actual raw WAV file
+        download_url = f"{VOICEBOX_API_URL}/audio/{generation_id}"
+        audio_response = requests.get(download_url, stream=True, timeout=60)
+        audio_response.raise_for_status()
+        
+        with open(output_path, "wb") as f:
+            for chunk in audio_response.iter_content(chunk_size=8192):
+                f.write(chunk)
+                
+        log.debug("Voicebox generated: %s", output_path)
         return True
-    except (ImportError, TypeError):
-        log.warning("Coqui TTS not installed or incompatible (Python 3.9). Falling back to gTTS.")
+        
+    except requests.exceptions.ConnectionError:
+        log.error("Could not connect to Voicebox server at %s. Is it running?", VOICEBOX_API_URL)
         return False
     except Exception as e:
-        log.error("Coqui TTS error: %s", e)
-        return False
-
-
-def _synthesize_with_gtts(text: str, output_path: Path) -> bool:
-    """
-    Fallback: Use gTTS to generate MP3 and convert to WAV via ffmpeg.
-    Returns True on success.
-    """
-    try:
-        from gtts import gTTS  # type: ignore
-        import subprocess
-
-        mp3_path = output_path.with_suffix(".mp3")
-        tts = gTTS(text=text, lang="en", tld="co.in", slow=False)
-        tts.save(str(mp3_path))
-
-        # Convert MP3 → WAV (required downstream for ffmpeg scene stitching)
-        subprocess.run(
-            ["ffmpeg", "-y", "-i", str(mp3_path), str(output_path)],
-            check=True,
-            capture_output=True,
-        )
-        mp3_path.unlink(missing_ok=True)
-        log.debug("gTTS WAV saved: %s", output_path)
-        return True
-    except Exception as e:
-        log.error("gTTS fallback error: %s", e)
+        log.error("Voicebox API error: %s", e)
         return False
 
 
@@ -120,13 +127,11 @@ def synthesize_scene(scene: dict, story_hash: str) -> Optional[Path]:
 
     log.info("Synthesizing scene %d: '%s...'", scene_id, text[:50])
 
-    # Try Coqui first, gTTS as fallback
-    if _synthesize_with_coqui(text, wav_path):
-        return wav_path
-    if _synthesize_with_gtts(text, wav_path):
+    # Use Voicebox directly as the primary engine
+    if _synthesize_with_voicebox(text, wav_path):
         return wav_path
 
-    log.error("All TTS methods failed for scene %d.", scene_id)
+    log.error("Voicebox generation failed for scene %d.", scene_id)
     return None
 
 

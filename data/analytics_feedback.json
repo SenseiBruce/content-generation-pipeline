@@ -12,13 +12,19 @@
         "Income Tax",
         "Surcharge",
         "Standard Deduction",
-        "Nifty 50"
+        "Gold Bond",
+        "Mutual Funds",
+        "Savings"
     ],
     "losing_keywords": [
-        "Generic IPO list",
-        "Basic Savings",
-        "Fixed Deposit",
-        "Penny Stocks"
+        "Share Market",
+        "Stock",
+        "Nifty",
+        "Sensex",
+        "IPO",
+        "Trading",
+        "Penny Stocks",
+        "Intraday"
     ],
-    "last_updated": "2026-02-28T16:00:00Z"
+    "last_updated": "2026-02-28T16:35:00Z"
 }

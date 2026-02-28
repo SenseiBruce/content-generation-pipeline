@@ -60,10 +60,6 @@ RSS_SOURCES = [
         "name": "India Personal Finance",
         "url": "https://news.google.com/rss/search?q=income+tax+india+budget+inflation+when:1d&hl=en-IN&gl=IN&ceid=IN:en",
     },
-    {
-        "name": "India Stock Market",
-        "url": "https://news.google.com/rss/search?q=nifty+sensex+stock+market+india+when:1d&hl=en-IN&gl=IN&ceid=IN:en",
-    },
 ]
 
 RAW_DIR = Path(__file__).parent.parent / "data" / "raw"
