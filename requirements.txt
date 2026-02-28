@@ -1,0 +1,35 @@
+# Capital Architects — YouTube Shorts Pipeline
+# Python 3.11+ required
+
+# ── HTTP & Feeds ─────────────────────────────────────────────────────────────
+feedparser==6.0.11
+requests==2.32.3
+python-dotenv==1.0.1
+
+# ── OpenRouter / LLM ─────────────────────────────────────────────────────────
+# (OpenRouter is accessed via the requests library using the standard OpenAI
+#  chat completions endpoint — no special SDK needed)
+
+# ── Runware Image Generation ─────────────────────────────────────────────────
+# (Uses direct HTTP requests to the REST API via the 'requests' package)
+
+# ── Video Stitching ──────────────────────────────────────────────────────────
+# Optional fallback if system ffmpeg lacks freetype/drawtext support
+pillow
+# Coqui TTS (local, offline, male Indian accent via VCTK model)
+TTS==0.22.0
+
+# gTTS as lightweight fallback (requires internet)
+gTTS==2.5.1
+
+# ── YouTube Data API v3 ───────────────────────────────────────────────────────
+google-api-python-client==2.136.0
+google-auth==2.35.0
+google-auth-oauthlib==1.2.1
+google-auth-httplib2==0.2.0
+
+# ── Video / Audio (FFmpeg is a system dependency, not a Python package) ───────
+# Install FFmpeg via: brew install ffmpeg
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+# (No numpy / cv2 / moviepy required — FFmpeg handles all video work)

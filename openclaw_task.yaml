@@ -1,0 +1,76 @@
+# OpenClaw Task Configuration
+# Capital Architects — YouTube Shorts Automation Pipeline
+#
+# This task file tells OpenClaw to run the pipeline every 6 hours.
+# Runtime is capped at 25 minutes with sandbox restrictions enforced.
+# All scheduling is handled internally — no OS cron dependency.
+
+task:
+  name: capital_architects_pipeline
+  description: >
+    Autonomous YouTube Shorts factory for Capital Architects.
+    Fetches India finance RSS news, picks top 5 stories,
+    generates scripts via GPT-4o, judges with weighted scoring,
+    produces 1080×1920 Shorts with AI images + local TTS,
+    then schedules upload via YouTube Data API v3.
+
+  # ── Scheduling ──────────────────────────────────────────────────
+  schedule:
+    type: interval
+    interval_hours: 6
+    # Aligns with India early morning so fresh news is ready by peak hours
+    first_run: "08:00 IST"
+
+  # ── Execution ───────────────────────────────────────────────────
+  execution:
+    command: python3 run_pipeline.py
+    working_directory: /Users/kinshuk.prasad/Documents/Project_X/content-generation-pipeline
+    timeout_minutes: 25
+    python_version: "3.11"
+
+  # ── Sandbox Restrictions ────────────────────────────────────────
+  sandbox:
+    # Task is restricted to its own project directory only
+    allowed_paths:
+      - /Users/kinshuk.prasad/Documents/Project_X/content-generation-pipeline
+    # No arbitrary shell commands allowed
+    allow_shell_exec: false
+    # Only outbound HTTPS connections to known APIs
+    allowed_domains:
+      - openrouter.ai
+      - api.runware.io
+      - www.googleapis.com
+      - accounts.google.com
+      - youtube.googleapis.com
+      - rbi.org.in
+      - economictimes.indiatimes.com
+      - pib.gov.in
+      - news.google.com
+
+  # ── Logging ─────────────────────────────────────────────────────
+  logging:
+    enabled: true
+    level: INFO
+    output_dir: logs
+    # Rotate logs daily; keep 30 days of history
+    rotate: daily
+    retain_days: 30
+
+  # ── Environment ─────────────────────────────────────────────────
+  env:
+    # All secrets loaded from .env — never hardcoded here
+    dotenv_file: .env
+    variables:
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: /Users/kinshuk.prasad/Documents/Project_X/content-generation-pipeline
+
+  # ── Failure Recovery ────────────────────────────────────────────
+  on_failure:
+    # Do not retry automatically — next scheduled run will attempt fresh news
+    retry: false
+    alert_log: true
+
+  # ── Resource Limits ─────────────────────────────────────────────
+  resources:
+    max_memory_mb: 2048
+    max_cpu_percent: 80

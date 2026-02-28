@@ -1,0 +1,33 @@
+# Secrets
+.env
+youtube_token.json
+client_secret.json
+*.json.bak
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Generated media (large files)
+data/raw/
+data/media/
+data/output/
+data/scripts/
+data/approved/
+data/rejected/
+data/prioritized/
+
+# Logs
+logs/
+
+# macOS
+.DS_Store
