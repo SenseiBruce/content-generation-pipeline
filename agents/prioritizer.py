@@ -19,11 +19,12 @@ import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple
 
-import requests
 from dotenv import load_dotenv
 
+from pipeline import http_client
+from pipeline.http_client import RequestException
 from pipeline.logger import get_logger
 
 log = get_logger("prioritizer")
@@ -62,7 +63,7 @@ def _load_analytics_insights() -> str:
             "-------------------------------"
         ).format(", ".join(winners), ", ".join(losers), ". ".join(insights))
         return prompt_block
-    except Exception as e:
+    except (json.JSONDecodeError, OSError, TypeError, KeyError) as e:
         log.warning("Could not load analytics feedback: %s", e)
         return "No insights available."
 
@@ -81,7 +82,8 @@ def _score_story_via_llm(story: dict) -> Tuple[int, dict]:
     insights = _load_analytics_insights()
 
     prompt = (
-        "You are a content strategist for 'Capital Architects', an Indian finance YouTube Shorts channel.\n"
+        "You are a content strategist for 'Capital Architects', "
+        "an Indian finance YouTube Shorts channel.\n"
         "Audience: Common Indian people (salaried class, investors, small business owners).\n\n"
         "{}\n\n"
         "News Title: {}\n"
@@ -89,11 +91,14 @@ def _score_story_via_llm(story: dict) -> Tuple[int, dict]:
         "Score this story on TWO dimensions:\n"
         "1. POCKET_IMPACT (0-60): How directly does this affect an Indian person's money "
         "(taxes, loans, savings, inflation, RBI policy, SEBI rules)?\n"
-        "2. SEARCH_INTENT (0-40): Would ordinary Indians be actively searching for this topic today?\n\n"
-        "MANDATORY RULE: If the story is about the SHARE MARKET, STOCK TRADING, NIFTY, SENSEX or IPOs, "
+        "2. SEARCH_INTENT (0-40): Would ordinary Indians be actively searching "
+        "for this topic today?\n\n"
+        "MANDATORY RULE: If the story is about the SHARE MARKET, STOCK TRADING, "
+        "NIFTY, SENSEX or IPOs, "
         "give it a TOTAL SCORE of 0. We avoid these topics.\n\n"
         "GUIDANCE: If a story aligns with the Winning Topics/Keywords in the insights above, "
-        "boost its Search Intent score by +10 (max 40). If it matches Losing Topics, reduce both scores significantly.\n\n"
+        "boost its Search Intent score by +10 (max 40). If it matches Losing Topics, "
+        "reduce both scores significantly.\n\n"
         "IMPORTANT: If the story has NO financial relevance to India, both scores MUST be 0.\n\n"
         "Respond in EXACTLY this format (no extra text):\n"
         "POCKET_IMPACT: <number>\n"
@@ -115,7 +120,7 @@ def _score_story_via_llm(story: dict) -> Tuple[int, dict]:
 
     for attempt in range(3):
         try:
-            resp = requests.post(OPENROUTER_BASE_URL, headers=headers, json=payload, timeout=30)
+            resp = http_client.post(OPENROUTER_BASE_URL, headers=headers, json=payload, timeout=30)
             resp.raise_for_status()
             text = resp.json()["choices"][0]["message"]["content"].strip()
 
@@ -135,7 +140,7 @@ def _score_story_via_llm(story: dict) -> Tuple[int, dict]:
             log.debug("Score %d | %.60s | %s", combined, title, reason)
             return combined, story
 
-        except (requests.RequestException, AttributeError, KeyError, ValueError) as e:
+        except (RequestException, AttributeError, KeyError, ValueError) as e:
             log.warning("Scoring attempt %d failed for '%.50s': %s", attempt + 1, title, e)
             time.sleep(2 ** attempt)
 
@@ -163,7 +168,7 @@ def prioritize(stories: List[dict]) -> List[dict]:
                 score, story = future.result()
                 if score >= MIN_SCORE:
                     scored.append((score, story))
-            except Exception as e:
+            except (RuntimeError, ValueError, OSError) as e:
                 log.error("Worker error: %s", e)
 
     # Sort descending, take top N

@@ -9,13 +9,16 @@ Requires the standalone Voicebox server running at http://localhost:8000
 Set VOICEBOX_PROFILE_ID in your .env file to target your custom voice profile.
 """
 
+import json
 import os
-import asyncio
-import time
+import re
 from pathlib import Path
 from typing import Dict, Optional
 
 from dotenv import load_dotenv
+
+from pipeline import http_client
+from pipeline.http_client import RequestException
 from pipeline.logger import get_logger
 
 log = get_logger("voicer")
@@ -35,56 +38,49 @@ def _synthesize_with_voicebox(text: str, output_path: Path) -> bool:
     Voicebox handles all MLX/GPU model loading internally.
     Returns True on success.
     """
-    import requests
-    
     if not VOICEBOX_PROFILE_ID:
         log.error("VOICEBOX_PROFILE_ID is not set in .env")
         log.error("Please create a profile in the Voicebox Web UI and add its ID to .env")
         return False
-        
+
     try:
-        # Trigger standard generation endpoint to generate and save inside Voicebox DB
         url = f"{VOICEBOX_API_URL}/generate"
         payload = {
             "profile_id": VOICEBOX_PROFILE_ID,
             "text": text,
-            "language": "en"
+            "language": "en",
         }
-        
-        # Give a long timeout for TTS inference
-        response = requests.post(url, json=payload, timeout=120)
-        
+
+        response = http_client.post(url, json=payload, timeout=120)
+
         if response.status_code == 202:
             log.warning("Voicebox model is currently downloading. We need to wait and retry.")
             return False
-            
+
         response.raise_for_status()
-        
-        # Voicebox API returns {"id": "gen_id", "audio_path": "..."}
-        # But we want to download the raw wave file from /audio/{generation_id}
+
         gen_data = response.json()
         generation_id = gen_data.get("id")
-        
+
         if not generation_id:
             log.error("Voicebox API did not return a generation ID: %s", gen_data)
             return False
-            
-        # Second request to download the actual raw WAV file
+
         download_url = f"{VOICEBOX_API_URL}/audio/{generation_id}"
-        audio_response = requests.get(download_url, stream=True, timeout=60)
+        audio_response = http_client.get(download_url, timeout=60)
         audio_response.raise_for_status()
-        
+
         with open(output_path, "wb") as f:
             for chunk in audio_response.iter_content(chunk_size=8192):
                 f.write(chunk)
-                
+
         log.debug("Voicebox generated: %s", output_path)
         return True
-        
-    except requests.exceptions.ConnectionError:
-        log.error("Could not connect to Voicebox server at %s. Is it running?", VOICEBOX_API_URL)
+
+    except RequestException as e:
+        log.error("Could not reach Voicebox server at %s: %s", VOICEBOX_API_URL, e)
         return False
-    except Exception as e:
+    except (json.JSONDecodeError, OSError, ValueError, KeyError) as e:
         log.error("Voicebox API error: %s", e)
         return False
 
@@ -94,7 +90,6 @@ def _sanitize_text(text: str) -> str:
     Remove characters that TTS engines choke on (emojis, special punctuation).
     Keep commas and periods for natural pacing.
     """
-    import re
     # Remove emoji and non-ASCII
     clean = re.sub(r"[^\x00-\x7F]+", "", text)
     # Collapse multiple spaces

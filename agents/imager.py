@@ -19,11 +19,12 @@ import os
 import time
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict
 
-import requests
 from dotenv import load_dotenv
 
+from pipeline import http_client
+from pipeline.http_client import RequestException
 from pipeline.logger import get_logger
 
 log = get_logger("imager")
@@ -55,7 +56,7 @@ def _enhance_prompt(raw_prompt: str) -> str:
     return raw_prompt.strip() + style_suffix
 
 
-def _generate_one_image(prompt: str, save_path: Path, session: requests.Session) -> bool:
+def _generate_one_image(prompt: str, save_path: Path) -> bool:
     """
     Generate a single image via the Runware REST API.
     Uses the /imageInference endpoint with API key auth.
@@ -87,7 +88,7 @@ def _generate_one_image(prompt: str, save_path: Path, session: requests.Session)
 
     for attempt in range(3):
         try:
-            resp = session.post(RUNWARE_API_URL, headers=headers, json=payload, timeout=60)
+            resp = http_client.post(RUNWARE_API_URL, headers=headers, json=payload, timeout=60)
             resp.raise_for_status()
 
             data = resp.json()
@@ -95,14 +96,15 @@ def _generate_one_image(prompt: str, save_path: Path, session: requests.Session)
             # Runware API returns {"data": [...]} with each item having imageURL
             items = data.get("data", [])
             if not items:
-                raise RuntimeError(f"Runware returned no images. Response: {json.dumps(data)[:300]}")
+                raise RuntimeError(
+                    f"Runware returned no images. Response: {json.dumps(data)[:300]}"
+                )
 
             image_url = items[0].get("imageURL")
             if not image_url:
                 raise RuntimeError(f"No imageURL in Runware response item: {items[0]}")
 
-            # Download the image
-            img_resp = session.get(image_url, timeout=30)
+            img_resp = http_client.get(image_url, timeout=30)
             img_resp.raise_for_status()
 
             save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -110,17 +112,21 @@ def _generate_one_image(prompt: str, save_path: Path, session: requests.Session)
             log.info("Image saved: %s", save_path)
             return True
 
-        except requests.exceptions.HTTPError as e:
+        except RequestException as e:
             err_text = ""
-            if e.response is not None:
+            if getattr(e, "response", None) is not None:
                 err_text = e.response.text
             wait = 2 ** (attempt + 1)
             log.warning(
-                "Image generation attempt %d/3 failed: %s | Responses: %s — retrying in %ds", attempt + 1, e, err_text, wait
+                "Image generation attempt %d/3 failed: %s | Responses: %s — retrying in %ds",
+                attempt + 1,
+                e,
+                err_text,
+                wait,
             )
             time.sleep(wait)
 
-        except Exception as e:
+        except (json.JSONDecodeError, KeyError, RuntimeError, OSError) as e:
             wait = 2 ** (attempt + 1)
             log.warning(
                 "Image generation attempt %d/3 failed: %s — retrying in %ds", attempt + 1, e, wait
@@ -151,27 +157,25 @@ def generate_images(script: dict) -> Dict[int, Path]:
 
     results: Dict[int, Path] = {}
 
-    # Use a persistent session for connection reuse
-    with requests.Session() as session:
-        for scene in scenes:
-            scene_id = scene.get("id", 0)
-            prompt = scene.get("image_prompt", "").strip()
+    for scene in scenes:
+        scene_id = scene.get("id", 0)
+        prompt = scene.get("image_prompt", "").strip()
 
-            if not prompt:
-                log.warning("Scene %d has empty image_prompt — skipping.", scene_id)
-                continue
+        if not prompt:
+            log.warning("Scene %d has empty image_prompt — skipping.", scene_id)
+            continue
 
-            save_path = story_dir / f"img_{scene_id:02d}.png"
+        save_path = story_dir / f"img_{scene_id:02d}.png"
 
-            # Skip re-generation if image already exists (useful for reruns)
-            if save_path.exists() and save_path.stat().st_size > 1000:
-                log.info("Reusing cached image for scene %d: %s", scene_id, save_path)
-                results[scene_id] = save_path
-                continue
+        # Skip re-generation if image already exists (useful for reruns)
+        if save_path.exists() and save_path.stat().st_size > 1000:
+            log.info("Reusing cached image for scene %d: %s", scene_id, save_path)
+            results[scene_id] = save_path
+            continue
 
-            success = _generate_one_image(prompt, save_path, session)
-            if success:
-                results[scene_id] = save_path
+        success = _generate_one_image(prompt, save_path)
+        if success:
+            results[scene_id] = save_path
 
     log.info(
         "Imager: %d/%d images generated for '%s'", len(results), len(scenes), project_name
