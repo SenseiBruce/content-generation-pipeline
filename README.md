@@ -91,6 +91,7 @@ Edit `.env` and fill in:
 | `RUNWARE_API_KEY` | [runware.ai](https://runware.ai) dashboard |
 | `VOICEBOX_API_URL` | Voicebox server URL (default `http://localhost:8000`) |
 | `VOICEBOX_PROFILE_ID` | Voice profile ID from the Voicebox UI |
+| `ERROR_WEBHOOK_URL` | Optional HTTPS webhook fired when a run aborts (leave empty locally) |
 
 ### Step 2: YouTube OAuth Authentication (once only)
 
@@ -192,6 +193,15 @@ tail -f logs/pipeline_$(date +%Y%m%d).log
 ```
 
 Pipeline run history (last 100 runs) is stored in `data/pipeline_state.json`.
+Aborted runs are recorded with `status: aborted` and `abort_reason`. When
+`ERROR_WEBHOOK_URL` is set, `run_pipeline._abort` POSTs that payload so a
+missed 6-hour OpenClaw slot can still page.
+
+Poll last-run health (exit 0 = last run succeeded within 8 hours):
+
+```bash
+./scripts/health_check.sh
+```
 
 ---
 

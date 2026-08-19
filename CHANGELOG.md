@@ -16,6 +16,11 @@ known vulnerabilities.
 Dev tools live only in `[dependency-groups] dev` (not duplicated under
 `[project.optional-dependencies]`).
 
+### Observability
+
+- `ERROR_WEBHOOK_URL` POSTs from `run_pipeline._abort` when a scheduled run fails.
+- `./scripts/health_check.sh` polls `data/pipeline_state.json` (exit 1 if missing, stale, or last run aborted).
+
 ## [0.1.0] — 2026-08-19
 
 Reproducible baseline for the Capital Architects YouTube Shorts pipeline.
