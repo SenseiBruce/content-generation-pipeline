@@ -4,6 +4,20 @@ version = "0.1.0"
 description = "Capital Architects YouTube Shorts automation pipeline"
 requires-python = ">=3.11"
 readme = "README.md"
+keywords = [
+    "youtube-shorts",
+    "content-automation",
+    "python-cli",
+    "scheduled-pipeline",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Video",
+]
 dependencies = [
     "feedparser==6.0.11",
     "requests==2.33.0",
