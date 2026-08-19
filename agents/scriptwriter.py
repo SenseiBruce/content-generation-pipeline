@@ -16,10 +16,14 @@ import time
 from pathlib import Path
 from typing import List, Optional
 
-import requests
 from dotenv import load_dotenv
+from pydantic import ValidationError
 
+from pipeline import http_client
+from pipeline.errors import PipelineValidationError
+from pipeline.http_client import RequestException
 from pipeline.logger import get_logger
+from pipeline.schemas import ScriptSchema
 
 log = get_logger("scriptwriter")
 
@@ -59,7 +63,10 @@ SCHEMA_TEMPLATE = {
         },
         {
             "id": 4,
-            "voice_over": "15-22 words giving a SPECIFIC ACTIONABLE MOVE (e.g. check Section 80C, buy gold bond).",
+            "voice_over": (
+                "15-22 words giving a SPECIFIC ACTIONABLE MOVE "
+                "(e.g. check Section 80C, buy gold bond)."
+            ),
             "image_prompt": "Metaphorical visual, no text",
             "caption": {"text": "5-8 word actionable caption"},
         },
@@ -85,7 +92,10 @@ def _load_system_prompt() -> str:
     if SYSTEM_PROMPT_FILE.exists():
         return SYSTEM_PROMPT_FILE.read_text(encoding="utf-8").strip()
     log.warning("System prompt file missing; using inline fallback.")
-    return "You are a professional Indian finance YouTube Shorts scriptwriter. Output only valid JSON."
+    return (
+        "You are a professional Indian finance YouTube Shorts scriptwriter. "
+        "Output only valid JSON."
+    )
 
 
 def _call_openrouter(system: str, user: str) -> str:
@@ -115,10 +125,10 @@ def _call_openrouter(system: str, user: str) -> str:
 
     for attempt in range(3):
         try:
-            resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=60)
+            resp = http_client.post(OPENROUTER_URL, headers=headers, json=payload, timeout=60)
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"].strip()
-        except Exception as e:
+        except (RequestException, KeyError, IndexError, TypeError, ValueError) as e:
             log.warning("OpenRouter attempt %d failed: %s", attempt + 1, e)
             if attempt < 2:
                 time.sleep(2 ** (attempt + 1))
@@ -167,47 +177,15 @@ def _build_user_prompt(story: dict) -> str:
     )
 
 
-def _validate_script(script: dict) -> List[str]:
+def _validate_script(script: dict) -> ScriptSchema:
     """
-    Validate the generated script against the strict output schema.
-    Returns a list of violation messages (empty = valid).
+    Validate the generated script against ScriptSchema.
+    Raises PipelineValidationError on structural or content-rule failures.
     """
-    errors = []
-
-    scenes = script.get("scenes", [])
-    if len(scenes) != 5:
-        errors.append(f"Expected 5 scenes for 30s+ length, got {len(scenes)}")
-
-    for scene in scenes:
-        vo = scene.get("voice_over", "")
-        word_count = len(vo.split())
-        if not (15 <= word_count <= 25):
-            errors.append(f"Scene {scene.get('id', '?')}: voice_over has {word_count} words (need 15-22 for duration)")
-
-        img = scene.get("image_prompt", "").lower()
-        forbidden = ["text", "letter", "word", "caption", "watermark", "banner", "title", "label", "font"]
-        for term in forbidden:
-            if term in img:
-                errors.append(f"Scene {scene.get('id', '?')}: image_prompt contains forbidden term '{term}'")
-
-        caption_text = scene.get("caption", {}).get("text", "")
-        cap_words = len(caption_text.split())
-        if not (4 <= cap_words <= 10):
-            errors.append(f"Scene {scene.get('id', '?')}: caption has {cap_words} words (need 5-8)")
-
-    title = script.get("title", "")
-    if len(title) > 70:
-        errors.append(f"Title too long: {len(title)} chars (max 70 for SEO)")
-
-    desc = script.get("description", "")
-    word_count_desc = len(desc.split())
-    if not (250 <= word_count_desc <= 400):
-        errors.append(f"Description word count {word_count_desc} (need 250-350 for SEO weight)")
-
-    if len(script.get("project_name", "")) > 30:
-        errors.append("project_name exceeds 30 characters")
-
-    return errors
+    try:
+        return ScriptSchema.model_validate(script)
+    except ValidationError as exc:
+        raise PipelineValidationError(str(exc)) from exc
 
 
 def generate_script(story: dict) -> Optional[dict]:
@@ -224,7 +202,7 @@ def generate_script(story: dict) -> Optional[dict]:
     try:
         raw = _call_openrouter(system, user)
         script = _extract_json(raw)
-    except Exception as e:
+    except (RuntimeError, ValueError, json.JSONDecodeError) as e:
         log.error("Script generation failed for '%s': %s", title[:60], e)
         return None
 
@@ -235,10 +213,10 @@ def generate_script(story: dict) -> Optional[dict]:
     script["metadata"]["original_title"] = story.get("title", "")
     script["metadata"]["fact_check_status"] = "pending"
 
-    # Validate
-    errors = _validate_script(script)
-    if errors:
-        log.warning("Script validation issues for '%s': %s", title[:60], errors)
+    try:
+        _validate_script(script)
+    except PipelineValidationError as e:
+        log.warning("Script validation issues for '%s': %s", title[:60], e)
         # Attach validation notes but still return — the judge will decide
 
     # Save draft
@@ -265,7 +243,9 @@ def generate_all(stories: List[dict]) -> List[dict]:
 
 
 if __name__ == "__main__":
-    prioritized_file = Path(__file__).parent.parent / "data" / "prioritized" / "selected_stories.json"
+    prioritized_file = (
+        Path(__file__).parent.parent / "data" / "prioritized" / "selected_stories.json"
+    )
     if not prioritized_file.exists():
         print("No prioritized stories found. Run prioritizer first.")
     else:
