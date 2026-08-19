@@ -8,7 +8,7 @@ dependencies = [
     "feedparser==6.0.11",
     "requests==2.33.0",
     "python-dotenv==1.2.2",
-    "pydantic==2.9.2",
+    "pydantic==2.13.4",
     "pillow==12.3.0",
     "google-api-python-client==2.136.0",
     "google-auth==2.35.0",
