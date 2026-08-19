@@ -21,7 +21,7 @@ pydantic==2.9.2
 pillow==10.4.0
 
 # gTTS as lightweight fallback (requires internet)
-gTTS==2.5.1
+gTTS==2.5.4
 
 # ── YouTube Data API v3 ───────────────────────────────────────────────────────
 google-api-python-client==2.136.0
