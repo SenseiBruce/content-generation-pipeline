@@ -166,8 +166,13 @@ docker run --rm content-generation-pipeline
 docker compose run --rm pipeline
 ```
 
-The default container command runs the offline test suite. Deployment target
-(OpenClaw + Docker, no Terraform/k8s) is documented in `docs/architecture.md`.
+The default container command runs the offline test suite.
+
+**Infrastructure scope:** this repo is a Python automation pipeline, not cloud IaC.
+The only container surface is `Dockerfile` and `docker-compose.yml` (OpenClaw runs
+the host process; Voicebox TTS is an optional local HTTP service). There is no
+Terraform, Kubernetes, Helm, Pulumi, or Ansible. Policy scanning (Checkov/tfsec)
+does not apply until those files exist. See `docs/architecture.md`.
 
 ---
 
