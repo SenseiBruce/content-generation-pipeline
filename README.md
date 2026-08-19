@@ -23,7 +23,8 @@ content-generation-pipeline/
 ├── auth_youtube.py       # One-time OAuth2 authentication
 ├── openclaw_task.yaml    # OpenClaw scheduler config
 ├── requirements.txt
-├── requirements.lock
+├── requirements.lock     # pip-compile/uv pins (install with pip)
+├── uv.lock               # uv lockfile (recognized by dependency scanners)
 ├── requirements-dev.txt
 └── .env.template
 ```
@@ -53,10 +54,13 @@ source .venv/bin/activate
 
 # Reproducible install (preferred)
 pip install -r requirements.lock
+# equivalent: uv sync --frozen
 
 # Or from the unpinned-to-exact spec
 pip install -r requirements.txt
 ```
+
+CI fails if `requirements.lock` or `uv.lock` is missing or out of sync (`./scripts/check-lockfile.sh`).
 
 Optional Coqui TTS (not required — the voicer agent uses Voicebox over HTTP):
 
