@@ -3,7 +3,7 @@ import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from pipeline.health import check_health, main
+from pipeline.health import check_health, inspect_health, main
 
 
 def _write_state(tmp_path: Path, last_run: str, status: str = "success") -> Path:
@@ -24,6 +24,10 @@ def _write_state(tmp_path: Path, last_run: str, status: str = "success") -> Path
 def test_check_health_ok(tmp_path: Path):
     now = datetime(2026, 8, 19, 21, 0, 0)
     path = _write_state(tmp_path, now.isoformat(), "success")
+    payload = inspect_health(path, max_age_hours=8, now=now)
+    assert payload["ok"] is True
+    assert payload["status"] == "success"
+    assert payload["stale"] is False
     code, reason = check_health(path, max_age_hours=8, now=now)
     assert code == 0
     assert reason == "ok"
@@ -52,27 +56,49 @@ def test_check_health_invalid_timestamp(tmp_path: Path):
     code, reason = check_health(path)
     assert code == 1
     assert "invalid last_run" in reason
+
+
+def test_check_health_stale_after_eight_hours(tmp_path: Path):
     now = datetime(2026, 8, 19, 21, 0, 0)
     last = (now - timedelta(hours=9)).isoformat()
     path = _write_state(tmp_path, last, "success")
+    payload = inspect_health(path, max_age_hours=8, now=now)
+    assert payload["ok"] is False
+    assert payload["stale"] is True
+    assert payload["age_hours"] > 8
     code, reason = check_health(path, max_age_hours=8, now=now)
     assert code == 1
     assert "stale" in reason
 
 
+def test_main_exits_nonzero_when_stale(tmp_path: Path, capsys):
+    now = datetime.now() - timedelta(hours=9)
+    path = _write_state(tmp_path, now.isoformat(), "success")
+    assert main(["--state-file", str(path), "--max-age-hours", "8", "--format", "json"]) == 1
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is False
+    assert payload["stale"] is True
+
+
 def test_check_health_aborted(tmp_path: Path):
     now = datetime(2026, 8, 19, 21, 0, 0)
     path = _write_state(tmp_path, now.isoformat(), "aborted")
+    payload = inspect_health(path, max_age_hours=8, now=now)
+    assert payload["ok"] is False
+    assert payload["status"] == "aborted"
     code, reason = check_health(path, max_age_hours=8, now=now)
     assert code == 1
     assert "aborted" in reason
 
 
-def test_main_exit_code(tmp_path: Path, capsys):
+def test_main_prints_json_payload(tmp_path: Path, capsys):
     now = datetime.now()
     path = _write_state(tmp_path, now.isoformat(), "success")
     assert main(["--state-file", str(path), "--max-age-hours", "8"]) == 0
-    assert capsys.readouterr().out.strip() == "ok"
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["status"] == "success"
+    assert payload["reason"] == "ok"
 
 
 def test_health_check_script_exit_code(tmp_path: Path):
@@ -86,4 +112,6 @@ def test_health_check_script_exit_code(tmp_path: Path):
         check=False,
     )
     assert result.returncode == 0
-    assert result.stdout.strip() == "ok"
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["status"] == "success"

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pipeline import state
+from pipeline import metrics, state
 
 
 def test_mark_seen_and_is_seen(monkeypatch, tmp_path: Path):
@@ -18,6 +18,7 @@ def test_mark_seen_and_is_seen(monkeypatch, tmp_path: Path):
 def test_record_run(monkeypatch, tmp_path: Path):
     state_file = tmp_path / "pipeline_state.json"
     monkeypatch.setattr(state, "STATE_FILE", state_file)
+    monkeypatch.setattr(metrics, "METRICS_JSON", tmp_path / "pipeline_metrics.json")
 
     state.record_run({"status": "success", "videos_uploaded": 1})
     data = state._load()
@@ -29,6 +30,7 @@ def test_record_run(monkeypatch, tmp_path: Path):
 def test_record_run_captures_failure_status(monkeypatch, tmp_path: Path):
     state_file = tmp_path / "pipeline_state.json"
     monkeypatch.setattr(state, "STATE_FILE", state_file)
+    monkeypatch.setattr(metrics, "METRICS_JSON", tmp_path / "pipeline_metrics.json")
 
     state.record_run({"status": "aborted", "abort_reason": "Time exceeded before watchtower"})
     data = state._load()

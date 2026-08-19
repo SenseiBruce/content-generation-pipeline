@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from pipeline.logger import get_logger
+from pipeline.metrics import write_run_metrics
 
 log = get_logger("state")
 
@@ -71,4 +72,5 @@ def record_run(summary: Dict[str, Any]) -> None:
     state["runs"] = state["runs"][-100:]
     state["last_run"] = entry["timestamp"]
     _save(state)
+    write_run_metrics(entry)
     log.info("Run recorded: %s", entry)

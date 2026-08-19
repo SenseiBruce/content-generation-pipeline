@@ -32,6 +32,8 @@ data/scripts/
 data/approved/
 data/rejected/
 data/prioritized/
+data/pipeline_metrics.json
+data/pipeline_metrics.prom
 
 # Logs
 logs/
