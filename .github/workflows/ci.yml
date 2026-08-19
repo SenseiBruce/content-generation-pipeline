@@ -4,6 +4,9 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  schedule:
+    # Monday 06:00 UTC — catch CVEs even when there are no pushes.
+    - cron: "0 6 * * 1"
 
 jobs:
   lockfile:
@@ -94,4 +97,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install pip-audit==2.7.3
       - name: Audit locked dependencies
-        run: pip-audit -r requirements.lock
+        # pip-audit exits non-zero on known CVEs by default (no continue-on-error).
+        # --strict additionally fails if dependency collection itself fails.
+        run: pip-audit -r requirements.lock --strict

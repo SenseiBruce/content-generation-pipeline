@@ -34,8 +34,10 @@ mypy agents pipeline
 ./scripts/check-lockfile.sh   # requires `uv`
 ```
 
-GitHub Actions runs those plus `pip-audit -r requirements.lock` on every
-push and pull request.
+GitHub Actions runs those plus `pip-audit -r requirements.lock --strict` on
+every push, pull request, and a Monday 06:00 UTC schedule. The audit job
+fails the pipeline when known CVEs are found (`continue-on-error` is not
+set). Locally: `pip-audit -r requirements.lock --strict`.
 
 ## Branch naming
 
