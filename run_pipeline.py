@@ -23,7 +23,6 @@ Security:
 Runtime target: < 25 minutes per full run (enforced by OpenClaw task config)
 """
 
-import os
 import sys
 import time
 from datetime import datetime
@@ -34,20 +33,20 @@ PROJECT_ROOT = Path(__file__).parent.resolve()
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from dotenv import load_dotenv
+
 load_dotenv(PROJECT_ROOT / ".env")
 
+from agents.analyst import pull_and_analyze
+from agents.imager import generate_images
+from agents.judge import judge_all
+from agents.prioritizer import prioritize
+from agents.publisher import upload_video
+from agents.scriptwriter import generate_all
+from agents.stitcher import stitch_video
+from agents.voicer import synthesize_all
+from agents.watchtower import fetch_all_news
 from pipeline.logger import get_logger
 from pipeline.state import mark_seen, record_run
-
-from agents.watchtower import fetch_all_news
-from agents.prioritizer import prioritize
-from agents.scriptwriter import generate_all
-from agents.judge import judge_all
-from agents.imager import generate_images
-from agents.voicer import synthesize_all
-from agents.stitcher import stitch_video
-from agents.publisher import upload_video
-from agents.analyst import pull_and_analyze
 
 log = get_logger("orchestrator")
 
@@ -218,7 +217,7 @@ def run_pipeline() -> None:
         if video_id:
             log.info("✅ Video live: https://youtu.be/%s", video_id)
             summary["videos_uploaded"] += 1
-            
+
             # --- NEW: Autonomous Feedback Loop ---
             log.info("Stage 9: Analyst (Autonomous Feedback Loop)")
             if pull_and_analyze():
@@ -233,7 +232,11 @@ def run_pipeline() -> None:
                 approved_file.rename(archive_file)
                 log.info("Archived script to: %s", archive_file.name)
         else:
-            log.warning("Upload failed for '%s'. Video saved locally at: %s", project_name, final_video_path)
+            log.warning(
+                "Upload failed for '%s'. Video saved locally at: %s",
+                project_name,
+                final_video_path,
+            )
 
         # Mark story as seen regardless of upload success (to avoid duplicate scripts)
         mark_seen(story_hash)

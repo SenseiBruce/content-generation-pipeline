@@ -18,12 +18,10 @@ Prerequisites:
   3. Enable the YouTube Data API v3 in Google Cloud Console
 """
 
-import os
 import json
 from pathlib import Path
 
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.oauth2.credentials import Credentials
 
 PROJECT_ROOT = Path(__file__).parent
 CLIENT_SECRETS_FILE = PROJECT_ROOT / "client_secret.json"

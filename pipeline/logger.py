@@ -6,7 +6,6 @@ Writes to logs/pipeline_YYYYMMDD.log with per-day rotation and console output.
 """
 
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 

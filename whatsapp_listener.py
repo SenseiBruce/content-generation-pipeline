@@ -21,17 +21,17 @@ log = get_logger("whatsapp-bridge")
 
 def handle_message(message: str):
     message = message.upper().strip()
-    
+
     if "REFRESH ANALYTICS" in message or "ANALYZE" in message:
         log.info("WhatsApp Command Received: REFRESH ANALYTICS")
         if pull_and_analyze():
             print("SUCCESS: Analytics loop complete. Winners updated.")
         else:
             print("ERROR: Failed to fetch analytics. Check logs/youtube_token.json.")
-    
+
     elif "STATUS" in message:
         print("PIPELINE STATUS: Active (6-hourly cycle is enabled)")
-    
+
     else:
         print(f"UNKNOWN COMMAND: {message}. Try 'REFRESH ANALYTICS' or 'STATUS'.")
 

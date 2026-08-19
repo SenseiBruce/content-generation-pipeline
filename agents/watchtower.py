@@ -17,11 +17,10 @@ Sources:
 
 import hashlib
 import json
-import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List
 
 import feedparser
 
@@ -81,7 +80,7 @@ def _fetch_single_source(source: dict) -> List[dict]:
 
     try:
         feed = feedparser.parse(url, request_headers={"User-Agent": "Mozilla/5.0"})
-    except Exception as e:
+    except (OSError, ValueError, TypeError) as e:
         log.warning("Feed fetch error [%s]: %s", name, e)
         return []
 
@@ -138,7 +137,7 @@ def fetch_all_news() -> List[dict]:
                     if story["hash"] not in seen_in_batch:
                         all_stories.append(story)
                         seen_in_batch.add(story["hash"])
-            except Exception as e:
+            except (OSError, ValueError, RuntimeError) as e:
                 log.error("Unexpected error in feed worker: %s", e)
 
     if not all_stories:

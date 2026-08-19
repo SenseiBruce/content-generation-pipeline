@@ -12,7 +12,6 @@ Authentication: uses youtube_token.json (OAuth2 offline credentials).
 """
 
 import json
-import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
@@ -61,7 +60,8 @@ def _get_youtube_client():
         from googleapiclient.discovery import build
     except ImportError:
         raise RuntimeError(
-            "google-api-python-client not installed. Run: pip install google-api-python-client google-auth-oauthlib"
+            "google-api-python-client not installed. "
+            "Run: pip install google-api-python-client google-auth-oauthlib"
         )
 
     if not TOKEN_FILE.exists():
@@ -115,7 +115,7 @@ def _fetch_occupied_slots(youtube) -> set[datetime]:
 
             request = youtube.playlistItems().list_next(request, resp)
 
-    except Exception as e:
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as e:
         log.warning("Could not fetch scheduled videos for collision check: %s", e)
 
     return occupied
@@ -129,8 +129,10 @@ def _find_next_slot(youtube, start_from: datetime) -> str:
     occupied = _fetch_occupied_slots(youtube)
     log.debug("Found %d occupied slots", len(occupied))
 
-    now_ist = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
-    search_base = start_from.replace(tzinfo=timezone.utc) if start_from.tzinfo is None else start_from
+    if start_from.tzinfo is None:
+        search_base = start_from.replace(tzinfo=timezone.utc)
+    else:
+        search_base = start_from
 
     for day_offset in range(LOOKAHEAD_DAYS + 1):
         candidate_day = (search_base + timedelta(days=day_offset)).date()
@@ -196,7 +198,7 @@ def upload_video(video_path: Path, script: dict) -> Optional[str]:
     script_tags = script.get("tags", [])
     if not isinstance(script_tags, list):
         script_tags = []
-    
+
     # Merge script tags with defaults, set limit to ~20 total
     tags = (script_tags + DEFAULT_TAGS)[:25]
 
@@ -224,6 +226,8 @@ def upload_video(video_path: Path, script: dict) -> Optional[str]:
 
     video_id = None
     try:
+        from googleapiclient.errors import HttpError
+
         response = None
         while response is None:
             status, response = request.next_chunk()
@@ -233,7 +237,10 @@ def upload_video(video_path: Path, script: dict) -> Optional[str]:
         video_id = response.get("id")
         log.info("✅ Uploaded: https://youtu.be/%s (scheduled %s)", video_id, ist_display)
 
-    except Exception as e:
+    except HttpError as e:
+        log.error("Upload failed for '%s': %s", project_name, e)
+        return None
+    except (OSError, ValueError, KeyError) as e:
         log.error("Upload failed for '%s': %s", project_name, e)
         return None
 

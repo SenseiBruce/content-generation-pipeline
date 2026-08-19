@@ -6,14 +6,12 @@ and updates analytics_feedback.json to guide the next pipeline run.
 """
 
 import json
-import os
-import time
+from datetime import datetime
 from pathlib import Path
-from datetime import datetime, timezone
-from typing import List, Dict, Optional
+
+from dotenv import load_dotenv
 
 from pipeline.logger import get_logger
-from dotenv import load_dotenv
 
 log = get_logger("analyst")
 
@@ -27,7 +25,7 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 def _get_youtube_client():
     from google.oauth2.credentials import Credentials
     from googleapiclient.discovery import build
-    
+
     if not TOKEN_FILE.exists():
         log.warning("YouTube token missing; cannot auto-pull analytics.")
         return None
@@ -43,7 +41,7 @@ def pull_and_analyze():
     4. Update analytics_feedback.json.
     """
     log.info("=== Analyst: Pulling latest YouTube performance data ===")
-    
+
     youtube = _get_youtube_client()
     if not youtube:
         return False
@@ -69,19 +67,19 @@ def pull_and_analyze():
         for item in video_items:
             v_id = item["contentDetails"]["videoId"]
             title = item["snippet"]["title"]
-            published_at = item["snippet"]["publishedAt"]
-            
+
             # Fetch stats for each video
             s_resp = youtube.videos().list(part="statistics,snippet", id=v_id).execute()
-            if not s_resp["items"]: continue
-            
+            if not s_resp["items"]:
+                continue
+
             stats = s_resp["items"][0]["statistics"]
             tags = s_resp["items"][0]["snippet"].get("tags", [])
-            
+
             views = int(stats.get("viewCount", 0))
             likes = int(stats.get("likeCount", 0))
             engagement = views + (likes * 5) # Weight likes 5x views
-            
+
             vids_data.append({
                 "title": title,
                 "tags": [t.lower() for t in tags],
@@ -89,11 +87,12 @@ def pull_and_analyze():
                 "views": views
             })
 
-        if not vids_data: return False
+        if not vids_data:
+            return False
 
         # Sort by engagement score
         vids_data.sort(key=lambda x: x["score"], reverse=True)
-        
+
         # Split into top 5 (winners) and bottom 5 (losers)
         winner_vids = vids_data[:5]
         loser_vids = vids_data[-5:] if len(vids_data) > 10 else []
@@ -104,7 +103,8 @@ def pull_and_analyze():
             winners.extend(v["tags"][:3])
             # Also extract keywords from title (naive)
             for word in v["title"].split():
-                if len(word) > 3: winners.append(word.lower())
+                if len(word) > 3:
+                    winners.append(word.lower())
 
         losers = []
         for v in loser_vids:
@@ -112,8 +112,8 @@ def pull_and_analyze():
 
         # De-duplicate and filter
         winners = list(set([w for w in winners if len(w) > 2]))[:10]
-        losers = list(set([l for l in losers if len(l) > 2]))[:10]
-        
+        losers = list(set([kw for kw in losers if len(kw) > 2]))[:10]
+
         # Final set logic: Winners minus Losers (just in case)
         winners = [w for w in winners if w not in losers]
 
@@ -122,7 +122,7 @@ def pull_and_analyze():
         log.info("Analytics loop complete. Winners: %s", ", ".join(winners))
         return True
 
-    except Exception as e:
+    except (OSError, ValueError, KeyError, TypeError) as e:
         log.error("Autonomous analysis failed: %s", e)
         return False
 
@@ -137,7 +137,7 @@ def update_feedback(winners: list = None, losers: list = None, insights: list = 
     if winners:
         # Use more recent data primarily, but keep a rolling history
         data["winning_keywords"] = winners
-    
+
     if losers:
         data["losing_keywords"] = losers
 
@@ -145,7 +145,10 @@ def update_feedback(winners: list = None, losers: list = None, insights: list = 
     # Basic static insight based on findings
     if winners:
         data["performance_insights"] = [
-            f"Currently, topics related to {', '.join(winners[:3])} are driving the highest engagement."
+            (
+                "Currently, topics related to "
+                f"{', '.join(winners[:3])} are driving the highest engagement."
+            )
         ]
 
     with open(FEEDBACK_FILE, "w") as f:
