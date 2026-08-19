@@ -178,7 +178,9 @@ does not apply until those files exist. See `docs/architecture.md`.
 
 ## Monitoring
 
-Logs are written to `logs/pipeline_YYYYMMDD.log` and printed to console.
+Logs are written as JSON lines to `logs/pipeline_YYYYMMDD.log` (fields:
+`timestamp`, `level`, `message`, `stage`, `run_id`, `duration_ms`) and as
+readable text on the console.
 
 ```bash
 # Watch live log output

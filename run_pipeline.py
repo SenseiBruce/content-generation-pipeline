@@ -25,6 +25,7 @@ Runtime target: < 25 minutes per full run (enforced by OpenClaw task config)
 
 import sys
 import time
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -45,7 +46,7 @@ from agents.scriptwriter import generate_all
 from agents.stitcher import stitch_video
 from agents.voicer import synthesize_all
 from agents.watchtower import fetch_all_news
-from pipeline.logger import get_logger
+from pipeline.logger import extra_fields, get_logger
 from pipeline.state import mark_seen, record_run
 
 log = get_logger("orchestrator")
@@ -57,18 +58,27 @@ PIPELINE_START = time.monotonic()
 RUNTIME_LIMIT_SECONDS = 23 * 60  # 23 minutes
 
 
-def _check_time_budget(stage: str) -> bool:
+def _check_time_budget(stage: str, run_id: str) -> bool:
     """Return False (and log warning) if the pipeline is running over budget."""
     elapsed = time.monotonic() - PIPELINE_START
     remaining = RUNTIME_LIMIT_SECONDS - elapsed
+    duration_ms = int(elapsed * 1000)
+    extra = extra_fields(stage, run_id, duration_ms=duration_ms)
     if remaining < 60:
         log.warning(
-            "⏰ Time budget nearly exhausted at stage '%s' (elapsed %.0fs). Stopping pipeline.",
+            "Time budget nearly exhausted at stage '%s' (elapsed %.0fs). Stopping pipeline.",
             stage,
             elapsed,
+            extra=extra,
         )
         return False
-    log.debug("Stage '%s' — elapsed %.0fs, remaining %.0fs", stage, elapsed, remaining)
+    log.debug(
+        "Stage '%s' — elapsed %.0fs, remaining %.0fs",
+        stage,
+        elapsed,
+        remaining,
+        extra=extra,
+    )
     return True
 
 
@@ -84,9 +94,12 @@ def _abort(reason: str, summary: dict) -> None:
 # Main pipeline
 # ─────────────────────────────────────────────────────────────────────────────
 def run_pipeline() -> None:
-    log.info("=" * 70)
-    log.info("🚀 Capital Architects pipeline starting — %s", datetime.now().isoformat())
-    log.info("=" * 70)
+    run_id = uuid.uuid4().hex[:12]
+    log.info(
+        "Capital Architects pipeline starting — %s",
+        datetime.now().isoformat(),
+        extra=extra_fields("orchestrator", run_id),
+    )
 
     summary: dict = {
         "started_at": datetime.now().isoformat(),
@@ -101,8 +114,8 @@ def run_pipeline() -> None:
     }
 
     # ── STAGE 1: Fetch News ─────────────────────────────────────────────────
-    log.info("── Stage 1: Watchtower (RSS fetch) ──")
-    if not _check_time_budget("watchtower"):
+    log.info("Stage 1: Watchtower (RSS fetch)", extra=extra_fields("watchtower", run_id))
+    if not _check_time_budget("watchtower", run_id):
         return _abort("Time exceeded before watchtower", summary)
 
     stories = fetch_all_news()
@@ -117,8 +130,8 @@ def run_pipeline() -> None:
     log.info("Fetched %d new stories.", len(stories))
 
     # ── STAGE 2: Prioritize ─────────────────────────────────────────────────
-    log.info("── Stage 2: Prioritizer (top-5 selection) ──")
-    if not _check_time_budget("prioritizer"):
+    log.info("Stage 2: Prioritizer (top-5 selection)", extra=extra_fields("prioritizer", run_id))
+    if not _check_time_budget("prioritizer", run_id):
         return _abort("Time exceeded before prioritizer", summary)
 
     top_stories = prioritize(stories)
@@ -133,8 +146,8 @@ def run_pipeline() -> None:
     log.info("Top %d stories selected.", len(top_stories))
 
     # ── STAGE 3: Generate Scripts ───────────────────────────────────────────
-    log.info("── Stage 3: Scriptwriter (GPT-4o) ──")
-    if not _check_time_budget("scriptwriter"):
+    log.info("Stage 3: Scriptwriter (GPT-4o)", extra=extra_fields("scriptwriter", run_id))
+    if not _check_time_budget("scriptwriter", run_id):
         return _abort("Time exceeded before scriptwriter", summary)
 
     scripts = generate_all(top_stories)
@@ -147,8 +160,11 @@ def run_pipeline() -> None:
         return
 
     # ── STAGE 4: Judge & Auto-Improve ──────────────────────────────────────
-    log.info("── Stage 4: Judge (score + auto-improve, max 3 loops) ──")
-    if not _check_time_budget("judge"):
+    log.info(
+        "Stage 4: Judge (score + auto-improve, max 3 loops)",
+        extra=extra_fields("judge", run_id),
+    )
+    if not _check_time_budget("judge", run_id):
         return _abort("Time exceeded before judge", summary)
 
     approved_scripts, rejected_scripts = judge_all(scripts)
@@ -174,33 +190,33 @@ def run_pipeline() -> None:
         log.info("── Producing video %d/%d: %s ──", idx, len(approved_scripts), project_name)
 
         # ── STAGE 5: Generate Images ────────────────────────────────────────
-        if not _check_time_budget(f"imager [{project_name}]"):
+        if not _check_time_budget(f"imager [{project_name}]", run_id):
             _abort("Time exceeded during image generation", summary)
             break
 
-        log.info("Stage 5: Imager")
+        log.info("Stage 5: Imager", extra=extra_fields("imager", run_id))
         image_map = generate_images(script)
         if len(image_map) != len(script.get("scenes", [])):
             log.error("Image generation incomplete for '%s' — skipping this video.", project_name)
             continue
 
         # ── STAGE 6: Generate Voice ─────────────────────────────────────────
-        if not _check_time_budget(f"voicer [{project_name}]"):
+        if not _check_time_budget(f"voicer [{project_name}]", run_id):
             _abort("Time exceeded during voice synthesis", summary)
             break
 
-        log.info("Stage 6: Voicer")
+        log.info("Stage 6: Voicer", extra=extra_fields("voicer", run_id))
         audio_map = synthesize_all(script)
         if len(audio_map) != len(script.get("scenes", [])):
             log.error("Audio synthesis incomplete for '%s' — skipping this video.", project_name)
             continue
 
         # ── STAGE 7: Stitch Video ───────────────────────────────────────────
-        if not _check_time_budget(f"stitcher [{project_name}]"):
+        if not _check_time_budget(f"stitcher [{project_name}]", run_id):
             _abort("Time exceeded during video stitching", summary)
             break
 
-        log.info("Stage 7: Stitcher")
+        log.info("Stage 7: Stitcher", extra=extra_fields("stitcher", run_id))
         final_video_path = stitch_video(script, image_map, audio_map)
         if not final_video_path:
             log.error("Video stitching failed for '%s' — skipping.", project_name)
@@ -209,18 +225,21 @@ def run_pipeline() -> None:
         summary["videos_produced"] += 1
 
         # ── STAGE 8: Upload to YouTube ──────────────────────────────────────
-        if not _check_time_budget(f"publisher [{project_name}]"):
+        if not _check_time_budget(f"publisher [{project_name}]", run_id):
             _abort("Time exceeded before upload", summary)
             break
 
-        log.info("Stage 8: Publisher")
+        log.info("Stage 8: Publisher", extra=extra_fields("publisher", run_id))
         video_id = upload_video(final_video_path, script)
         if video_id:
             log.info("✅ Video live: https://youtu.be/%s", video_id)
             summary["videos_uploaded"] += 1
 
             # --- NEW: Autonomous Feedback Loop ---
-            log.info("Stage 9: Analyst (Autonomous Feedback Loop)")
+            log.info(
+                "Stage 9: Analyst (Autonomous Feedback Loop)",
+                extra=extra_fields("analyst", run_id),
+            )
             if pull_and_analyze():
                 log.info("Feedback loop complete: prioritizer now optimized for current winners.")
 
@@ -247,8 +266,11 @@ def run_pipeline() -> None:
     summary["status"] = "success"
     summary["elapsed_seconds"] = round(elapsed, 1)
 
-    log.info("=" * 70)
-    log.info("✅ Pipeline complete in %.0fs", elapsed)
+    log.info(
+        "Pipeline complete in %.0fs",
+        elapsed,
+        extra=extra_fields("orchestrator", run_id, duration_ms=int(elapsed * 1000)),
+    )
     log.info("   Stories fetched    : %d", summary["stories_fetched"])
     log.info("   Stories prioritized: %d", summary["stories_prioritized"])
     log.info("   Scripts generated  : %d", summary["scripts_generated"])
@@ -256,7 +278,6 @@ def run_pipeline() -> None:
     log.info("   Scripts rejected   : %d", summary["scripts_rejected"])
     log.info("   Videos produced    : %d", summary["videos_produced"])
     log.info("   Videos uploaded    : %d", summary["videos_uploaded"])
-    log.info("=" * 70)
 
     record_run(summary)
 
