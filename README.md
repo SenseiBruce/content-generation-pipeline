@@ -14,14 +14,17 @@ Autonomous finance news Shorts factory for the **Capital Architects** YouTube ch
 ```
 content-generation-pipeline/
 ├── agents/               # One Python file per pipeline stage
-├── pipeline/             # Shared utilities (logger, state)
+├── pipeline/             # Shared utilities (http_client, logger, schemas, state)
 ├── prompts/              # GPT-4o system prompts
+├── tests/                # pytest suite (no live API keys required)
 ├── data/                 # Runtime-generated (gitignored)
 ├── logs/                 # Daily rotating log files
 ├── run_pipeline.py       # Main orchestrator
 ├── auth_youtube.py       # One-time OAuth2 authentication
 ├── openclaw_task.yaml    # OpenClaw scheduler config
 ├── requirements.txt
+├── requirements.lock
+├── requirements-dev.txt
 └── .env.template
 ```
 
@@ -33,7 +36,8 @@ content-generation-pipeline/
 
 ```bash
 # FFmpeg (required for video stitching)
-brew install ffmpeg
+brew install ffmpeg   # macOS
+# sudo apt-get install -y ffmpeg   # Debian/Ubuntu
 
 # Python 3.11+
 python3 --version
@@ -41,19 +45,24 @@ python3 --version
 
 ### 2. Python Environment
 
-```bash
-cd /Users/kinshuk.prasad/Documents/Project_X/content-generation-pipeline
+From the repository root:
 
-# Create virtualenv
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies
+# Reproducible install (preferred)
+pip install -r requirements.lock
+
+# Or from the unpinned-to-exact spec
 pip install -r requirements.txt
 ```
 
-> **Note on Coqui TTS:** The first run will download the VCTK model (~1.5 GB).
-> This is a one-time download cached in `~/.local/share/tts/`.
+Optional Coqui TTS (not required — the voicer agent uses Voicebox over HTTP):
+
+```bash
+pip install -r requirements-optional.txt
+```
 
 ---
 
@@ -72,6 +81,8 @@ Edit `.env` and fill in:
 | `OPENROUTER_API_KEY` | [openrouter.ai/keys](https://openrouter.ai/keys) |
 | `OPENROUTER_MODEL` | Keep as `openai/gpt-4o` (or change to `gpt-4o-mini` for lower cost) |
 | `RUNWARE_API_KEY` | [runware.ai](https://runware.ai) dashboard |
+| `VOICEBOX_API_URL` | Voicebox server URL (default `http://localhost:8000`) |
+| `VOICEBOX_PROFILE_ID` | Voice profile ID from the Voicebox UI |
 
 ### Step 2: YouTube OAuth Authentication (once only)
 
@@ -93,13 +104,12 @@ This saves `youtube_token.json`. You will not need to repeat this step.
 From the OpenClaw dashboard or config, register the task:
 
 ```bash
-# Point OpenClaw at the task config
 openclaw register openclaw_task.yaml
 ```
 
 Or manually add the task in the OpenClaw UI, pointing to:
 - **Command:** `python3 run_pipeline.py`
-- **Working directory:** `/Users/kinshuk.prasad/Documents/Project_X/content-generation-pipeline`
+- **Working directory:** the repository root
 - **Config file:** `openclaw_task.yaml`
 
 ---
@@ -107,7 +117,6 @@ Or manually add the task in the OpenClaw UI, pointing to:
 ## Running Manually
 
 ```bash
-cd /Users/kinshuk.prasad/Documents/Project_X/content-generation-pipeline
 source .venv/bin/activate
 
 # Run the full pipeline once
@@ -132,6 +141,30 @@ python3 -m agents.judge
 
 ---
 
+## Tests
+
+Install the test extras, then run the suite. Tests monkeypatch `pipeline.http_client` and do not need live API keys or network access.
+
+```bash
+pip install -r requirements-dev.txt
+pytest --cov=agents --cov=pipeline --cov-report=term --disable-socket
+```
+
+CI (GitHub Actions) runs `ruff check .` and the same pytest command on every push and pull request.
+
+---
+
+## Docker
+
+```bash
+docker build -t content-generation-pipeline .
+docker run --rm content-generation-pipeline
+```
+
+The default container command runs the offline test suite.
+
+---
+
 ## Monitoring
 
 Logs are written to `logs/pipeline_YYYYMMDD.log` and printed to console.
@@ -151,8 +184,9 @@ Pipeline run history (last 100 runs) is stored in `data/pipeline_state.json`.
 |---|---|
 | `OPENROUTER_API_KEY not set` | Check `.env` file exists and is populated |
 | `YouTube token not found` | Run `python3 auth_youtube.py` |
-| `ffmpeg not found` | Run `brew install ffmpeg` |
-| Coqui TTS slow first run | Model download in progress (~1.5 GB, one-time) |
+| `ffmpeg not found` | Install FFmpeg (`brew install ffmpeg` or `apt-get install ffmpeg`) |
+| `VOICEBOX_PROFILE_ID is not set` | Create a profile in the Voicebox UI and add its ID to `.env` |
+| `Could not connect to Voicebox` | Start the Voicebox server and confirm `VOICEBOX_API_URL` |
 | `No new stories found` | Normal if all stories were seen in the last 6h run |
 | Judge keeps rejecting scripts | Lower `APPROVAL_THRESHOLD` in `agents/judge.py` (default 85) |
 
@@ -161,6 +195,6 @@ Pipeline run history (last 100 runs) is stored in `data/pipeline_state.json`.
 ## Security Notes
 
 - `.env`, `youtube_token.json`, and `client_secret.json` are gitignored — never commit them
-- All API calls go to HTTPS only
+- All API calls go to HTTPS only (Voicebox may be local HTTP on localhost)
 - OpenClaw sandbox restricts file access to the project directory
 - No shell exec is allowed from within the pipeline tasks
