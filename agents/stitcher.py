@@ -59,7 +59,13 @@ def _ffprobe_duration(audio_path: Path) -> float:
         for stream in data.get("streams", []):
             if stream.get("codec_type") == "audio":
                 return float(stream.get("duration", 3.0))
-    except Exception as e:
+    except (
+        subprocess.CalledProcessError,
+        json.JSONDecodeError,
+        ValueError,
+        TypeError,
+        FileNotFoundError,
+    ) as e:
         log.warning("ffprobe failed for %s: %s — using 3.0s default", audio_path, e)
     return 3.0
 
@@ -67,8 +73,9 @@ def _ffprobe_duration(audio_path: Path) -> float:
 def _create_caption_image(text: str, out_path: Path):
     """Use Pillow to draw wrapped text onto a transparent 1080x1920 canvas."""
     try:
-        from PIL import Image, ImageDraw, ImageFont
         import textwrap
+
+        from PIL import Image, ImageDraw, ImageFont
     except ImportError:
         log.error("Pillow not installed. Run: pip install Pillow")
         return False
@@ -79,7 +86,7 @@ def _create_caption_image(text: str, out_path: Path):
 
     try:
         font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", CAPTION_FONT_SIZE)
-    except Exception:
+    except (OSError, IOError):
         font = ImageFont.load_default()
 
     lines = textwrap.wrap(text, width=28)
@@ -141,7 +148,7 @@ def _render_scene_clip(
     """
     duration = _ffprobe_duration(audio_path)
     caption = scene.get("caption", {}).get("text", "")
-    
+
     caption_path = clip_output.with_suffix(".png")
     if not _create_caption_image(caption, caption_path):
         return False
@@ -156,12 +163,16 @@ def _render_scene_clip(
         zoom_expr = "if(eq(on,0),1.15,max(zoom-0.0012,1.0))"
 
     # To avoid jitter, scale image to a fixed large size before zoompan
-    scale_filter = "scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276"
-    zoom_filter = f"zoompan=z='{zoom_expr}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920"
-    
+    scale_filter = (
+        "scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276"
+    )
+    zoom_filter = (
+        f"zoompan=z='{zoom_expr}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920"
+    )
+
     fade_in = "fade=t=in:st=0:d=0.3:alpha=1"
     fade_out = f"fade=t=out:st={duration-0.3:.2f}:d=0.3:alpha=1"
-    
+
     filter_complex = (
         f"[0:v]{scale_filter},{zoom_filter}[bg];"
         f"[1:v]format=rgba,{fade_in},{fade_out}[ov];"
@@ -197,7 +208,7 @@ def _render_scene_clip(
     except FileNotFoundError:
         log.error("ffmpeg not found — please install FFmpeg.")
         return False
-    except Exception as e:
+    except (OSError, ValueError) as e:
         log.error("Scene render error: %s", e)
         return False
 
@@ -236,7 +247,7 @@ def _concatenate_clips(clip_paths: List[Path], output_path: Path) -> bool:
             log.error("FFmpeg concat error:\n%s", result.stderr[-800:])
             return False
         return True
-    except Exception as e:
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as e:
         log.error("Concat error: %s", e)
         return False
 
@@ -275,7 +286,12 @@ def stitch_video(
         audio_path = audio_map.get(sid)
 
         if not image_path or not audio_path:
-            log.error("Missing asset for scene %d (image=%s, audio=%s)", sid, image_path, audio_path)
+            log.error(
+                "Missing asset for scene %d (image=%s, audio=%s)",
+                sid,
+                image_path,
+                audio_path,
+            )
             return None
 
         clip_path = working_dir / f"clip_{sid:02d}.mp4"
