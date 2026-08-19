@@ -8,8 +8,6 @@ certifi==2026.7.22
     # via requests
 charset-normalizer==3.5.1
     # via requests
-click==8.1.8
-    # via gtts
 feedparser==6.0.11
     # via -r requirements.txt
 google-api-core==2.30.3
@@ -31,8 +29,6 @@ google-auth-oauthlib==1.2.1
     # via -r requirements.txt
 googleapis-common-protos==1.75.1
     # via google-api-core
-gtts==2.5.1
-    # via -r requirements.txt
 httplib2==0.32.0
     # via
     #   google-api-python-client
@@ -41,7 +37,7 @@ idna==3.19
     # via requests
 oauthlib==3.3.1
     # via requests-oauthlib
-pillow==10.4.0
+pillow==12.3.0
     # via -r requirements.txt
 proto-plus==1.28.3
     # via google-api-core
@@ -62,13 +58,12 @@ pydantic-core==2.23.4
     # via pydantic
 pyparsing==3.3.2
     # via httplib2
-python-dotenv==1.0.1
+python-dotenv==1.2.2
     # via -r requirements.txt
-requests==2.32.3
+requests==2.33.0
     # via
     #   -r requirements.txt
     #   google-api-core
-    #   gtts
     #   requests-oauthlib
 requests-oauthlib==2.0.0
     # via google-auth-oauthlib
