@@ -16,10 +16,20 @@ known vulnerabilities.
 Dev tools live only in `[dependency-groups] dev` (not duplicated under
 `[project.optional-dependencies]`).
 
+`uv lock --check` and `./scripts/check-lockfile.sh` both exit 0. The committed
+`uv.lock` lists the full resolved graph (`[[package]]` entries plus
+`[package.metadata.requires-dist]`); `requirements.lock` records the same
+pins with `# via` comments. A scanner reporting `total_transitive_deps: 0`
+is not reading those lockfiles.
+
 ### Observability
 
 - `ERROR_WEBHOOK_URL` POSTs from `run_pipeline._abort` when a scheduled run fails.
-- `./scripts/health_check.sh` polls `data/pipeline_state.json` (exit 1 if missing, stale, or last run aborted).
+- `./scripts/health_check.sh` prints JSON (status, last_run, age_hours, stale, abort_reason) and exits 1 if missing, stale (>8h), or aborted.
+- Each run writes `data/pipeline_metrics.json` and `data/pipeline_metrics.prom` for Prometheus-style polling.
+
+README opens with a **Project classification** / **Infrastructure scope** note so
+this Python service is not treated as cloud IaC.
 
 ## [0.1.0] — 2026-08-19
 

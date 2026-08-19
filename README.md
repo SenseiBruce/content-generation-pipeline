@@ -1,5 +1,13 @@
 # Capital Architects — YouTube Shorts Automation Pipeline
 
+**Project classification:** Python content-automation service (CLI / scheduled job).
+This repository is **not** infrastructure-as-code.
+
+**Infrastructure scope:** there is no Terraform, Kubernetes, Helm, Pulumi, or
+Ansible. The only container files are `Dockerfile` and `docker-compose.yml`,
+used to run this Python app and its tests in isolation. OpenClaw schedules
+`python3 run_pipeline.py` on the host. See `docs/architecture.md`.
+
 Autonomous finance news Shorts factory for the **Capital Architects** YouTube channel.
 
 - **Audience:** India
@@ -171,13 +179,9 @@ docker run --rm content-generation-pipeline
 docker compose run --rm pipeline
 ```
 
-The default container command runs the offline test suite.
-
-**Infrastructure scope:** this repo is a Python automation pipeline, not cloud IaC.
-The only container surface is `Dockerfile` and `docker-compose.yml` (OpenClaw runs
-the host process; Voicebox TTS is an optional local HTTP service). There is no
-Terraform, Kubernetes, Helm, Pulumi, or Ansible. Policy scanning (Checkov/tfsec)
-does not apply until those files exist. See `docs/architecture.md`.
+The default container command runs the offline test suite. Container files here
+are an app runtime, not cloud IaC (see **Infrastructure scope** at the top of
+this README). Policy scanning (Checkov/tfsec) does not apply.
 
 ---
 
@@ -197,11 +201,17 @@ Aborted runs are recorded with `status: aborted` and `abort_reason`. When
 `ERROR_WEBHOOK_URL` is set, `run_pipeline._abort` POSTs that payload so a
 missed 6-hour OpenClaw slot can still page.
 
-Poll last-run health (exit 0 = last run succeeded within 8 hours):
+Poll last-run health as machine-readable JSON (exit 0 = last run succeeded
+within 8 hours; exit 1 if missing, stale, or aborted):
 
 ```bash
 ./scripts/health_check.sh
 ```
+
+Each `record_run` also writes `data/pipeline_metrics.json` and a Prometheus
+text file `data/pipeline_metrics.prom` (`pipeline_runs_total`,
+`pipeline_last_run_timestamp_seconds`, `pipeline_last_run_healthy`,
+`pipeline_videos_uploaded`) for the same pollers.
 
 ---
 
