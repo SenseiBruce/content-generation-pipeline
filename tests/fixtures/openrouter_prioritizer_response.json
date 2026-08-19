@@ -1,0 +1,12 @@
+{
+  "id": "gen-test-prioritizer",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "POCKET_IMPACT: 55\nSEARCH_INTENT: 30\nREASON: Direct EMI and tax impact for salaried Indians."
+      }
+    }
+  ]
+}

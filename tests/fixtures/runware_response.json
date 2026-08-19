@@ -1,0 +1,8 @@
+{
+  "data": [
+    {
+      "taskUUID": "test-task-uuid",
+      "imageURL": "https://example.com/generated/img.png"
+    }
+  ]
+}
