@@ -231,17 +231,6 @@ dependencies = [
     { name = "requests" },
 ]
 
-[package.optional-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pip-tools" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-socket" },
-    { name = "ruff" },
-    { name = "types-requests" },
-]
-
 [package.dev-dependencies]
 dev = [
     { name = "mypy" },
@@ -260,19 +249,11 @@ requires-dist = [
     { name = "google-auth", specifier = "==2.35.0" },
     { name = "google-auth-httplib2", specifier = "==0.2.0" },
     { name = "google-auth-oauthlib", specifier = "==1.2.1" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = "==1.11.2" },
     { name = "pillow", specifier = "==12.3.0" },
-    { name = "pip-tools", marker = "extra == 'dev'", specifier = "==7.4.1" },
     { name = "pydantic", specifier = "==2.9.2" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = "==8.3.3" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==5.0.0" },
-    { name = "pytest-socket", marker = "extra == 'dev'", specifier = "==0.7.0" },
     { name = "python-dotenv", specifier = "==1.2.2" },
     { name = "requests", specifier = "==2.33.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.6.9" },
-    { name = "types-requests", marker = "extra == 'dev'", specifier = "==2.32.0.20240907" },
 ]
-provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [
