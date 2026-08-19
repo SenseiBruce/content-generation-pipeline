@@ -18,7 +18,7 @@ pydantic==2.9.2
 
 # ── Video Stitching ──────────────────────────────────────────────────────────
 # Optional fallback if system ffmpeg lacks freetype/drawtext support
-pillow==10.4.0
+pillow==12.3.0
 
 # gTTS as lightweight fallback (requires internet)
 gTTS==2.5.1
