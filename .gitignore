@@ -17,6 +17,13 @@ build/
 venv/
 env/
 
+# Test / lint artifacts
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+caption_test.png
+
 # Generated media (large files)
 data/raw/
 data/media/

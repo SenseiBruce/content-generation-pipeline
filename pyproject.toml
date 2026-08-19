@@ -1,0 +1,27 @@
+[project]
+name = "content-generation-pipeline"
+version = "0.1.0"
+description = "Capital Architects YouTube Shorts automation pipeline"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".venv", "data", "logs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+# Entry scripts insert the project root onto sys.path before importing agents.
+ignore = ["E402"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501"]
+
+[tool.coverage.run]
+source = ["agents", "pipeline"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

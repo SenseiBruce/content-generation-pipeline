@@ -6,18 +6,19 @@ feedparser==6.0.11
 requests==2.32.3
 python-dotenv==1.0.1
 
+# ── Structured validation ────────────────────────────────────────────────────
+pydantic==2.9.2
+
 # ── OpenRouter / LLM ─────────────────────────────────────────────────────────
-# (OpenRouter is accessed via the requests library using the standard OpenAI
+# (OpenRouter is accessed via pipeline.http_client using the standard OpenAI
 #  chat completions endpoint — no special SDK needed)
 
 # ── Runware Image Generation ─────────────────────────────────────────────────
-# (Uses direct HTTP requests to the REST API via the 'requests' package)
+# (Uses direct HTTP requests to the REST API via pipeline.http_client)
 
 # ── Video Stitching ──────────────────────────────────────────────────────────
 # Optional fallback if system ffmpeg lacks freetype/drawtext support
-pillow
-# Coqui TTS (local, offline, male Indian accent via VCTK model)
-TTS==0.22.0
+pillow==10.4.0
 
 # gTTS as lightweight fallback (requires internet)
 gTTS==2.5.1
@@ -29,7 +30,6 @@ google-auth-oauthlib==1.2.1
 google-auth-httplib2==0.2.0
 
 # ── Video / Audio (FFmpeg is a system dependency, not a Python package) ───────
-# Install FFmpeg via: brew install ffmpeg
-
-# ── Utilities ─────────────────────────────────────────────────────────────────
-# (No numpy / cv2 / moviepy required — FFmpeg handles all video work)
+# Install FFmpeg via: brew install ffmpeg  (or apt-get install ffmpeg)
+# Voice synthesis uses the Voicebox HTTP API (see VOICEBOX_* in .env.template).
+# Optional Coqui TTS extras live in requirements-optional.txt

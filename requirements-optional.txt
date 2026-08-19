@@ -1,0 +1,4 @@
+# Optional local TTS (not required — voicer uses Voicebox over HTTP).
+# Install only if you want the Coqui fallback:
+#   pip install -r requirements-optional.txt
+TTS==0.22.0
