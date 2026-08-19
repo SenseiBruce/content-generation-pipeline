@@ -163,9 +163,11 @@ CI (GitHub Actions) runs `ruff check .` and the same pytest command on every pus
 ```bash
 docker build -t content-generation-pipeline .
 docker run --rm content-generation-pipeline
+docker compose run --rm pipeline
 ```
 
-The default container command runs the offline test suite.
+The default container command runs the offline test suite. Deployment target
+(OpenClaw + Docker, no Terraform/k8s) is documented in `docs/architecture.md`.
 
 ---
 
