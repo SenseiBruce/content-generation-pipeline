@@ -1,6 +1,6 @@
 [project]
 name = "content-generation-pipeline"
-version = "0.1.0"
+version = "0.2.0"
 description = "Capital Architects YouTube Shorts automation pipeline"
 requires-python = ">=3.11"
 readme = "README.md"
