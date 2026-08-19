@@ -7,6 +7,8 @@ Autonomous finance news Shorts factory for the **Capital Architects** YouTube ch
 - **Format:** Vertical 1080×1920, ≤60 seconds
 - **Cadence:** Every 6 hours via OpenClaw scheduler
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the offline test workflow (`pytest --disable-socket`), ruff/mypy gates, and branch naming.
+
 ---
 
 ## Folder Structure
@@ -22,6 +24,8 @@ content-generation-pipeline/
 ├── run_pipeline.py       # Main orchestrator
 ├── auth_youtube.py       # One-time OAuth2 authentication
 ├── openclaw_task.yaml    # OpenClaw scheduler config
+├── CONTRIBUTING.md
+├── CHANGELOG.md
 ├── requirements.txt
 ├── requirements.lock     # pip-compile/uv pins (install with pip)
 ├── uv.lock               # uv lockfile (recognized by dependency scanners)
