@@ -26,9 +26,10 @@ import time
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-import requests
 from dotenv import load_dotenv
 
+from pipeline import http_client
+from pipeline.http_client import RequestException
 from pipeline.logger import get_logger
 
 log = get_logger("judge")
@@ -77,10 +78,10 @@ def _call_judge_llm(system: str, user: str) -> str:
 
     for attempt in range(3):
         try:
-            resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=90)
+            resp = http_client.post(OPENROUTER_URL, headers=headers, json=payload, timeout=90)
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"].strip()
-        except Exception as e:
+        except (RequestException, KeyError, IndexError, TypeError, ValueError) as e:
             log.warning("Judge LLM attempt %d failed: %s", attempt + 1, e)
             if attempt < 2:
                 time.sleep(2 ** (attempt + 1))
@@ -115,7 +116,11 @@ def _parse_score(response_text: str) -> Tuple[int, str, str]:
         else "REJECT"
     )
 
-    feedback_match = re.search(r"FEEDBACK:\s*(.+?)(?=IMPROVED_SCRIPT:|$)", response_text, re.DOTALL | re.I)
+    feedback_match = re.search(
+        r"FEEDBACK:\s*(.+?)(?=IMPROVED_SCRIPT:|$)",
+        response_text,
+        re.DOTALL | re.I,
+    )
     feedback = feedback_match.group(1).strip() if feedback_match else ""
 
     log.debug(
@@ -184,7 +189,9 @@ def judge_script(script: dict) -> Tuple[str, dict, int]:
         log.info("  Judge loop %d/%d for: %s", loop, MAX_LOOPS, project_name)
 
         try:
-            response = _call_judge_llm(system, _build_judge_prompt(current_script, loop, prior_feedback))
+            response = _call_judge_llm(
+                system, _build_judge_prompt(current_script, loop, prior_feedback)
+            )
         except RuntimeError as e:
             log.error("Judge call failed: %s — marking as REJECTED", e)
             return "REJECTED", current_script, 0
