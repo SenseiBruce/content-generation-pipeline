@@ -23,6 +23,7 @@ FEEDBACK_FILE = PROJECT_ROOT / "data" / "analytics_feedback.json"
 TOKEN_FILE = PROJECT_ROOT / "youtube_token.json"
 SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
+
 def _get_youtube_client():
     from google.oauth2.credentials import Credentials
     from googleapiclient.discovery import build
@@ -33,6 +34,7 @@ def _get_youtube_client():
 
     creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
     return build("youtube", "v3", credentials=creds, cache_discovery=False)
+
 
 def pull_and_analyze():
     """
@@ -53,11 +55,11 @@ def pull_and_analyze():
         uploads_id = ch_resp["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
 
         # 2. Get last 20 videos
-        v_resp = youtube.playlistItems().list(
-            part="snippet,contentDetails",
-            playlistId=uploads_id,
-            maxResults=20
-        ).execute()
+        v_resp = (
+            youtube.playlistItems()
+            .list(part="snippet,contentDetails", playlistId=uploads_id, maxResults=20)
+            .execute()
+        )
 
         video_items = v_resp.get("items", [])
         if not video_items:
@@ -79,14 +81,16 @@ def pull_and_analyze():
 
             views = int(stats.get("viewCount", 0))
             likes = int(stats.get("likeCount", 0))
-            engagement = views + (likes * 5) # Weight likes 5x views
+            engagement = views + (likes * 5)  # Weight likes 5x views
 
-            vids_data.append({
-                "title": title,
-                "tags": [t.lower() for t in tags],
-                "score": engagement,
-                "views": views
-            })
+            vids_data.append(
+                {
+                    "title": title,
+                    "tags": [t.lower() for t in tags],
+                    "score": engagement,
+                    "views": views,
+                }
+            )
 
         if not vids_data:
             return False
@@ -127,6 +131,7 @@ def pull_and_analyze():
         log.error("Autonomous analysis failed: %s", e)
         return False
 
+
 def update_feedback(
     winners: Optional[list] = None,
     losers: Optional[list] = None,
@@ -163,6 +168,7 @@ def update_feedback(
     with open(FEEDBACK_FILE, "w") as f:
         json.dump(data, f, indent=2)
     return True
+
 
 if __name__ == "__main__":
     pull_and_analyze()

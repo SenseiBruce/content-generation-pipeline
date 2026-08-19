@@ -153,6 +153,7 @@ def synthesize_all(script: dict) -> Dict[int, Path]:
 
 if __name__ == "__main__":
     import json
+
     approved_dir = Path(__file__).parent.parent / "data" / "approved"
     scripts = list(approved_dir.glob("approved_*.json"))
     if not scripts:

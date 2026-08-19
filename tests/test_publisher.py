@@ -24,7 +24,9 @@ def test_ist_slot_to_utc_evening():
 
 
 def test_youtube_upload_schema_accepts_id():
-    assert _video_id_from_upload_response({"id": "abc123xyz", "kind": "youtube#video"}) == "abc123xyz"
+    assert (
+        _video_id_from_upload_response({"id": "abc123xyz", "kind": "youtube#video"}) == "abc123xyz"
+    )
 
 
 def test_youtube_upload_schema_rejects_malformed():

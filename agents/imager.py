@@ -40,7 +40,7 @@ RUNWARE_API_URL = "https://api.runware.ai/v1"
 
 # Image generation parameters
 IMAGE_MODEL = "runware:100@1"
-IMAGE_WIDTH = 1088   # Must be a multiple of 64 for Runware API
+IMAGE_WIDTH = 1088  # Must be a multiple of 64 for Runware API
 IMAGE_HEIGHT = 1920  # 1920 is already a multiple of 64 (30 * 64)
 NEGATIVE_PROMPT = (
     "text, letters, words, watermark, captions, subtitle, banner, label, "
@@ -175,9 +175,7 @@ def generate_images(script: dict) -> Dict[int, Path]:
         if success:
             results[scene_id] = save_path
 
-    log.info(
-        "Imager: %d/%d images generated for '%s'", len(results), len(scenes), project_name
-    )
+    log.info("Imager: %d/%d images generated for '%s'", len(results), len(scenes), project_name)
     return results
 
 
@@ -188,6 +186,7 @@ if __name__ == "__main__":
         print("No approved scripts found.")
     else:
         import json as _json
+
         script = _json.loads(scripts[0].read_text())
         images = generate_images(script)
         print(f"Generated images: {images}")

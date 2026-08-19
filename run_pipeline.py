@@ -64,7 +64,8 @@ def _check_time_budget(stage: str) -> bool:
     if remaining < 60:
         log.warning(
             "⏰ Time budget nearly exhausted at stage '%s' (elapsed %.0fs). Stopping pipeline.",
-            stage, elapsed,
+            stage,
+            elapsed,
         )
         return False
     log.debug("Stage '%s' — elapsed %.0fs, remaining %.0fs", stage, elapsed, remaining)

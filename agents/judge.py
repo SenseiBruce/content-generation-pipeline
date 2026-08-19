@@ -94,12 +94,13 @@ def _parse_score(response_text: str) -> Tuple[int, str, str]:
     Parse scoring block from judge response.
     Returns (total_score, verdict, feedback).
     """
+
     def extract_int(pattern: str, text: str, default: int = 0) -> int:
         m = re.search(pattern, text, re.I)
         return int(m.group(1)) if m else default
 
-    hook      = extract_int(r"HOOK_STRENGTH:\s*(\d+)", response_text)
-    search    = extract_int(r"SEARCH_INTENT:\s*(\d+)", response_text)
+    hook = extract_int(r"HOOK_STRENGTH:\s*(\d+)", response_text)
+    search = extract_int(r"SEARCH_INTENT:\s*(\d+)", response_text)
     practical = extract_int(r"PRACTICAL_VALUE:\s*(\d+)", response_text)
     retention = extract_int(r"RETENTION:\s*(\d+)", response_text)
     emotional = extract_int(r"EMOTIONAL_TRIGGER:\s*(\d+)", response_text)
@@ -110,10 +111,16 @@ def _parse_score(response_text: str) -> Tuple[int, str, str]:
     total = stated_total if stated_total >= 0 else computed
 
     verdict_match = re.search(r"VERDICT:\s*(APPROVED|IMPROVE|REJECT)", response_text, re.I)
-    verdict = verdict_match.group(1).upper() if verdict_match else (
-        "APPROVED" if total >= APPROVAL_THRESHOLD
-        else "IMPROVE" if total >= IMPROVE_THRESHOLD
-        else "REJECT"
+    verdict = (
+        verdict_match.group(1).upper()
+        if verdict_match
+        else (
+            "APPROVED"
+            if total >= APPROVAL_THRESHOLD
+            else "IMPROVE"
+            if total >= IMPROVE_THRESHOLD
+            else "REJECT"
+        )
     )
 
     feedback_match = re.search(
@@ -125,7 +132,13 @@ def _parse_score(response_text: str) -> Tuple[int, str, str]:
 
     log.debug(
         "Scores — Hook:%d Search:%d Practical:%d Retention:%d Emotional:%d → Total:%d (%s)",
-        hook, search, practical, retention, emotional, total, verdict,
+        hook,
+        search,
+        practical,
+        retention,
+        emotional,
+        total,
+        verdict,
     )
     return total, verdict, feedback
 
@@ -255,7 +268,8 @@ def judge_all(scripts: List[dict]) -> Tuple[List[dict], List[dict]]:
 
     log.info(
         "=== Judge complete: %d approved, %d rejected ===",
-        len(approved), len(rejected),
+        len(approved),
+        len(rejected),
     )
     return approved, rejected
 

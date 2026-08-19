@@ -19,6 +19,7 @@ from pipeline.logger import get_logger
 
 log = get_logger("whatsapp-bridge")
 
+
 def handle_message(message: str):
     message = message.upper().strip()
 
@@ -34,6 +35,7 @@ def handle_message(message: str):
 
     else:
         print(f"UNKNOWN COMMAND: {message}. Try 'REFRESH ANALYTICS' or 'STATUS'.")
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

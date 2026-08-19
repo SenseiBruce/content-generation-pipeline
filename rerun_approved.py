@@ -29,6 +29,7 @@ from pipeline.logger import get_logger
 
 log = get_logger("rerun-tool")
 
+
 def rerun(target: str, should_upload: bool = False):
     approved_dir = PROJECT_ROOT / "data" / "approved"
 
@@ -78,6 +79,7 @@ def rerun(target: str, should_upload: bool = False):
             log.info("Skipping upload (use --upload to publish).")
     else:
         log.error("❌ Stitching failed.")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

@@ -50,8 +50,13 @@ AUDIO_BITRATE = "192k"
 def _ffprobe_duration(audio_path: Path) -> float:
     """Return the duration of an audio file in seconds using ffprobe."""
     cmd = [
-        "ffprobe", "-v", "quiet", "-print_format", "json",
-        "-show_streams", str(audio_path),
+        "ffprobe",
+        "-v",
+        "quiet",
+        "-print_format",
+        "json",
+        "-show_streams",
+        str(audio_path),
     ]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -164,9 +169,7 @@ def _render_scene_clip(
         zoom_expr = "if(eq(on,0),1.15,max(zoom-0.0012,1.0))"
 
     # To avoid jitter, scale image to a fixed large size before zoompan
-    scale_filter = (
-        "scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276"
-    )
+    scale_filter = "scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276"
     zoom_filter = (
         f"zoompan=z='{zoom_expr}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920"
     )
@@ -181,20 +184,45 @@ def _render_scene_clip(
     )
 
     cmd = [
-        "ffmpeg", "-y",
-        "-loop", "1", "-framerate", "30", "-t", str(duration), "-i", str(image_path),
-        "-loop", "1", "-framerate", "30", "-t", str(duration), "-i", str(caption_path),
-        "-i", str(audio_path),
-        "-filter_complex", filter_complex,
-        "-map", "[vid]",
-        "-map", "2:a",
-        "-c:v", VIDEO_CODEC,
-        "-preset", VIDEO_PRESET,
-        "-crf", CRF,
-        "-c:a", AUDIO_CODEC,
-        "-b:a", AUDIO_BITRATE,
+        "ffmpeg",
+        "-y",
+        "-loop",
+        "1",
+        "-framerate",
+        "30",
+        "-t",
+        str(duration),
+        "-i",
+        str(image_path),
+        "-loop",
+        "1",
+        "-framerate",
+        "30",
+        "-t",
+        str(duration),
+        "-i",
+        str(caption_path),
+        "-i",
+        str(audio_path),
+        "-filter_complex",
+        filter_complex,
+        "-map",
+        "[vid]",
+        "-map",
+        "2:a",
+        "-c:v",
+        VIDEO_CODEC,
+        "-preset",
+        VIDEO_PRESET,
+        "-crf",
+        CRF,
+        "-c:a",
+        AUDIO_CODEC,
+        "-b:a",
+        AUDIO_BITRATE,
         "-shortest",
-        "-pix_fmt", "yuv420p",
+        "-pix_fmt",
+        "yuv420p",
         str(clip_output),
     ]
 
@@ -226,17 +254,28 @@ def _concatenate_clips(clip_paths: List[Path], output_path: Path) -> bool:
         concat_file = tmp.name
 
     cmd = [
-        "ffmpeg", "-y",
-        "-f", "concat",
-        "-safe", "0",
-        "-i", concat_file,
-        "-c:v", VIDEO_CODEC,
-        "-preset", VIDEO_PRESET,
-        "-crf", CRF,
-        "-c:a", AUDIO_CODEC,
-        "-b:a", AUDIO_BITRATE,
-        "-pix_fmt", "yuv420p",
-        "-movflags", "+faststart",       # Web-optimized MP4 (moov atom first)
+        "ffmpeg",
+        "-y",
+        "-f",
+        "concat",
+        "-safe",
+        "0",
+        "-i",
+        concat_file,
+        "-c:v",
+        VIDEO_CODEC,
+        "-preset",
+        VIDEO_PRESET,
+        "-crf",
+        CRF,
+        "-c:a",
+        AUDIO_CODEC,
+        "-b:a",
+        AUDIO_BITRATE,
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",  # Web-optimized MP4 (moov atom first)
         str(output_path),
     ]
 
@@ -323,6 +362,7 @@ def stitch_video(
 if __name__ == "__main__":
     # Quick test harness
     import json
+
     approved_dir = Path(__file__).parent.parent / "data" / "approved"
     scripts = list(approved_dir.glob("approved_*.json"))
     if not scripts:

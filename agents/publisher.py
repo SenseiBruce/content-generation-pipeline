@@ -36,10 +36,10 @@ SCOPES = [
 
 # India high-traffic publish slots (IST hours/minutes)
 PREFERRED_SLOTS_IST = [
-    (7, 30),    # 7:30 AM IST
-    (12, 30),   # 12:30 PM IST
-    (18, 30),   # 6:30 PM IST
-    (21, 0),    # 9:00 PM IST
+    (7, 30),  # 7:30 AM IST
+    (12, 30),  # 12:30 PM IST
+    (18, 30),  # 6:30 PM IST
+    (21, 0),  # 9:00 PM IST
 ]
 
 # How many days ahead to search for an open slot
@@ -47,8 +47,17 @@ LOOKAHEAD_DAYS = 4
 
 # Tags added to every upload for discoverability
 DEFAULT_TAGS = [
-    "#Shorts", "finance", "money", "india", "tax", "rbi", "sebi",
-    "investment", "stockmarket", "personalfinance", "capitalarchitects",
+    "#Shorts",
+    "finance",
+    "money",
+    "india",
+    "tax",
+    "rbi",
+    "sebi",
+    "investment",
+    "stockmarket",
+    "personalfinance",
+    "capitalarchitects",
 ]
 
 
@@ -68,8 +77,7 @@ def _get_youtube_client():
 
     if not TOKEN_FILE.exists():
         raise RuntimeError(
-            f"YouTube token not found at {TOKEN_FILE}. "
-            "Run auth_youtube.py to authenticate."
+            f"YouTube token not found at {TOKEN_FILE}. " "Run auth_youtube.py to authenticate."
         )
 
     creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
@@ -106,9 +114,7 @@ def _fetch_occupied_slots(youtube) -> set[datetime]:
             video_ids = [item["contentDetails"]["videoId"] for item in resp.get("items", [])]
 
             if video_ids:
-                status_resp = youtube.videos().list(
-                    part="status", id=",".join(video_ids)
-                ).execute()
+                status_resp = youtube.videos().list(part="status", id=",".join(video_ids)).execute()
                 for item in status_resp.get("items", []):
                     status = item.get("status", {})
                     if status.get("privacyStatus") == "private" and status.get("publishAt"):
@@ -150,7 +156,10 @@ def _find_next_slot(youtube, start_from: datetime) -> str:
             if slot_rounded not in occupied:
                 log.info(
                     "Scheduled slot: %02d:%02d IST on %s (UTC: %s)",
-                    hour, minute, candidate_day, utc_slot.isoformat(),
+                    hour,
+                    minute,
+                    candidate_day,
+                    utc_slot.isoformat(),
                 )
                 return utc_slot.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
@@ -196,8 +205,7 @@ def upload_video(video_path: Path, script: dict) -> Optional[str]:
     publish_at = _find_next_slot(youtube, start_from)
 
     ist_display = (
-        datetime.fromisoformat(publish_at.replace("Z", "+00:00"))
-        + timedelta(hours=5, minutes=30)
+        datetime.fromisoformat(publish_at.replace("Z", "+00:00")) + timedelta(hours=5, minutes=30)
     ).strftime("%Y-%m-%d %H:%M IST")
     log.info("Publishing at: %s (%s)", publish_at, ist_display)
 
@@ -215,7 +223,7 @@ def upload_video(video_path: Path, script: dict) -> Optional[str]:
             "title": title,
             "description": description,
             "tags": tags,
-            "categoryId": "27",          # Education
+            "categoryId": "27",  # Education
             "defaultLanguage": "en",
             "defaultAudioLanguage": "en",
         },

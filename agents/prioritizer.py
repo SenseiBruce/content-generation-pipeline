@@ -38,9 +38,9 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 PRIORITIZED_DIR = Path(__file__).parent.parent / "data" / "prioritized"
 TOP_N = 5
-MIN_SCORE = 60           # Stories below this are discarded
-MAX_WORKERS = 2          # Reduced to avoid 429 Too Many Requests
-MAX_CANDIDATES = 25      # Cap the number of stories scored per run
+MIN_SCORE = 60  # Stories below this are discarded
+MAX_WORKERS = 2  # Reduced to avoid 429 Too Many Requests
+MAX_CANDIDATES = 25  # Cap the number of stories scored per run
 ANALYTICS_FEEDBACK_FILE = Path(__file__).parent.parent / "data" / "analytics_feedback.json"
 
 
@@ -142,7 +142,7 @@ def _score_story_via_llm(story: dict) -> Tuple[int, dict]:
 
         except (RequestException, AttributeError, KeyError, ValueError) as e:
             log.warning("Scoring attempt %d failed for '%.50s': %s", attempt + 1, title, e)
-            time.sleep(2 ** attempt)
+            time.sleep(2**attempt)
 
     log.error("All scoring attempts failed for: %.60s", title)
     return 0, story
