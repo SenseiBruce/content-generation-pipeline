@@ -1,7 +1,11 @@
 import json
 from pathlib import Path
 
-from agents.imager import _generate_one_image
+import pytest
+from pydantic import ValidationError
+
+from agents.imager import _generate_one_image, _image_url_from_runware
+from pipeline.schemas import RunwareResponse
 
 
 def test_generate_one_image_uses_runware_fixture(monkeypatch, tmp_path: Path, fixture_dir: Path):
@@ -35,3 +39,13 @@ def test_generate_one_image_uses_runware_fixture(monkeypatch, tmp_path: Path, fi
     assert _generate_one_image("Cinematic vault of gold coins", save_path) is True
     assert save_path.exists()
     assert save_path.read_bytes() == png_bytes
+
+
+def test_runware_schema_rejects_malformed_fixture(fixture_dir: Path):
+    payload = json.loads(
+        (fixture_dir / "runware_response_malformed.json").read_text(encoding="utf-8")
+    )
+    with pytest.raises(ValidationError):
+        RunwareResponse.model_validate(payload)
+    with pytest.raises(ValidationError):
+        _image_url_from_runware(payload)

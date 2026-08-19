@@ -22,10 +22,12 @@ from pathlib import Path
 from typing import Dict
 
 from dotenv import load_dotenv
+from pydantic import ValidationError
 
 from pipeline import http_client
 from pipeline.http_client import RequestException
 from pipeline.logger import get_logger
+from pipeline.schemas import RunwareResponse
 
 log = get_logger("imager")
 
@@ -54,6 +56,12 @@ def _enhance_prompt(raw_prompt: str) -> str:
         "8K resolution, shallow depth of field"
     )
     return raw_prompt.strip() + style_suffix
+
+
+def _image_url_from_runware(data: dict) -> str:
+    """Validate a Runware JSON body and return the first image URL."""
+    parsed = RunwareResponse.model_validate(data)
+    return parsed.first_image_url()
 
 
 def _generate_one_image(prompt: str, save_path: Path) -> bool:
@@ -92,17 +100,7 @@ def _generate_one_image(prompt: str, save_path: Path) -> bool:
             resp.raise_for_status()
 
             data = resp.json()
-
-            # Runware API returns {"data": [...]} with each item having imageURL
-            items = data.get("data", [])
-            if not items:
-                raise RuntimeError(
-                    f"Runware returned no images. Response: {json.dumps(data)[:300]}"
-                )
-
-            image_url = items[0].get("imageURL")
-            if not image_url:
-                raise RuntimeError(f"No imageURL in Runware response item: {items[0]}")
+            image_url = _image_url_from_runware(data)
 
             img_resp = http_client.get(image_url, timeout=30)
             img_resp.raise_for_status()
@@ -126,7 +124,7 @@ def _generate_one_image(prompt: str, save_path: Path) -> bool:
             )
             time.sleep(wait)
 
-        except (json.JSONDecodeError, KeyError, RuntimeError, OSError) as e:
+        except (json.JSONDecodeError, KeyError, RuntimeError, OSError, ValidationError) as e:
             wait = 2 ** (attempt + 1)
             log.warning(
                 "Image generation attempt %d/3 failed: %s — retrying in %ds", attempt + 1, e, wait

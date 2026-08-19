@@ -118,3 +118,31 @@ class ScriptSchema(BaseModel):
         if len(self.scenes) != 5:
             raise ValueError(f"Expected 5 scenes for 30s+ length, got {len(self.scenes)}")
         return self
+
+
+class RunwareImageItem(BaseModel):
+    """One item from a Runware imageInference payload."""
+
+    model_config = ConfigDict(extra="allow")
+
+    imageURL: str = Field(min_length=1)
+    taskUUID: str | None = None
+
+
+class RunwareResponse(BaseModel):
+    """Runware REST envelope: {"data": [{"imageURL": "..."}]}."""
+
+    model_config = ConfigDict(extra="allow")
+
+    data: List[RunwareImageItem] = Field(min_length=1)
+
+    def first_image_url(self) -> str:
+        return self.data[0].imageURL
+
+
+class YouTubeUploadResponse(BaseModel):
+    """Subset of videos.insert JSON required after a successful upload."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str = Field(min_length=1)

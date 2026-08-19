@@ -17,8 +17,10 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
+from pydantic import ValidationError
 
 from pipeline.logger import get_logger
+from pipeline.schemas import YouTubeUploadResponse
 
 log = get_logger("publisher")
 
@@ -159,6 +161,11 @@ def _find_next_slot(youtube, start_from: datetime) -> str:
     return fallback_utc.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
 
+def _video_id_from_upload_response(response: dict) -> str:
+    """Validate a YouTube videos.insert payload and return the video id."""
+    return YouTubeUploadResponse.model_validate(response).id
+
+
 def upload_video(video_path: Path, script: dict) -> Optional[str]:
     """
     Upload a finished video to the Capital Architects YouTube channel.
@@ -234,13 +241,13 @@ def upload_video(video_path: Path, script: dict) -> Optional[str]:
             if status:
                 log.debug("Upload progress: %d%%", int(status.progress() * 100))
 
-        video_id = response.get("id")
+        video_id = _video_id_from_upload_response(response)
         log.info("✅ Uploaded: https://youtu.be/%s (scheduled %s)", video_id, ist_display)
 
     except HttpError as e:
         log.error("Upload failed for '%s': %s", project_name, e)
         return None
-    except (OSError, ValueError, KeyError) as e:
+    except (OSError, ValueError, KeyError, ValidationError) as e:
         log.error("Upload failed for '%s': %s", project_name, e)
         return None
 
