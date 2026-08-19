@@ -24,3 +24,14 @@ def test_record_run(monkeypatch, tmp_path: Path):
     assert data["last_run"] is not None
     assert data["runs"][0]["status"] == "success"
     assert data["runs"][0]["videos_uploaded"] == 1
+
+
+def test_record_run_captures_failure_status(monkeypatch, tmp_path: Path):
+    state_file = tmp_path / "pipeline_state.json"
+    monkeypatch.setattr(state, "STATE_FILE", state_file)
+
+    state.record_run({"status": "aborted", "abort_reason": "Time exceeded before watchtower"})
+    data = state._load()
+    assert data["runs"][0]["status"] == "aborted"
+    assert data["runs"][0]["abort_reason"] == "Time exceeded before watchtower"
+    assert data["last_run"] is not None

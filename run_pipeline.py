@@ -46,6 +46,7 @@ from agents.scriptwriter import generate_all
 from agents.stitcher import stitch_video
 from agents.voicer import synthesize_all
 from agents.watchtower import fetch_all_news
+from pipeline.alerts import notify_failure
 from pipeline.logger import extra_fields, get_logger
 from pipeline.state import mark_seen, record_run
 
@@ -83,11 +84,12 @@ def _check_time_budget(stage: str, run_id: str) -> bool:
 
 
 def _abort(reason: str, summary: dict) -> None:
-    """Log a clean abort and record the failed run."""
+    """Log a clean abort, persist failure status, and fire the error webhook."""
     log.error("Pipeline aborted: %s", reason)
     summary["status"] = "aborted"
     summary["abort_reason"] = reason
     record_run(summary)
+    notify_failure(reason, summary)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
