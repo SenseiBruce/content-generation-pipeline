@@ -8,6 +8,7 @@ and updates analytics_feedback.json to guide the next pipeline run.
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Optional
 
 from dotenv import load_dotenv
 
@@ -126,10 +127,18 @@ def pull_and_analyze():
         log.error("Autonomous analysis failed: %s", e)
         return False
 
-def update_feedback(winners: list = None, losers: list = None, insights: list = None):
+def update_feedback(
+    winners: Optional[list] = None,
+    losers: Optional[list] = None,
+    insights: Optional[list] = None,
+):
     """Update the analytics feedback file."""
     if not FEEDBACK_FILE.exists():
-        data = {"performance_insights": [], "winning_keywords": [], "losing_keywords": []}
+        data: dict[str, Any] = {
+            "performance_insights": [],
+            "winning_keywords": [],
+            "losing_keywords": [],
+        }
     else:
         with open(FEEDBACK_FILE, "r") as f:
             data = json.load(f)

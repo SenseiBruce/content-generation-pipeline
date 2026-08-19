@@ -21,7 +21,7 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pipeline.logger import get_logger
 
@@ -84,6 +84,7 @@ def _create_caption_image(text: str, out_path: Path):
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
+    font: Any
     try:
         font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", CAPTION_FONT_SIZE)
     except (OSError, IOError):
@@ -100,7 +101,7 @@ def _create_caption_image(text: str, out_path: Path):
         try:
             left, top, right, bottom = d.textbbox((0, 0), line, font=font)
         except AttributeError:
-            w, h = d.textsize(line, font=font)
+            w, h = d.textsize(line, font=font)  # type: ignore[attr-defined]
             right, left = w, 0
         max_w = max(max_w, right - left)
 
@@ -120,7 +121,7 @@ def _create_caption_image(text: str, out_path: Path):
                 left, top, right, bottom = d.textbbox((0, 0), line, font=font)
                 w = right - left
             except AttributeError:
-                w, h = d.textsize(line, font=font)
+                w, h = d.textsize(line, font=font)  # type: ignore[attr-defined]
 
             x = (W - w) // 2
             # Drop shadow
