@@ -1,0 +1,27 @@
+# Application compose — this repo is a Python pipeline, not IaC.
+# Voicebox TTS is a separate local service referenced by VOICEBOX_API_URL.
+#
+# Default: run the offline test suite (no API keys required).
+# TTS profile: attach to a Voicebox server on the host at port 8000.
+
+services:
+  pipeline:
+    build: .
+    image: content-generation-pipeline:local
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      VOICEBOX_API_URL: ${VOICEBOX_API_URL:-http://host.docker.internal:8000}
+      VOICEBOX_PROFILE_ID: ${VOICEBOX_PROFILE_ID:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  voicebox:
+    # Placeholder for Jamie Pine Voicebox (Qwen3-TTS). Replace `image`
+    # with your Voicebox build; this repo does not vendor that server.
+    profiles: ["tts"]
+    image: python:3.11-slim
+    command: ["python", "-m", "http.server", "8000"]
+    ports:
+      - "8000:8000"
