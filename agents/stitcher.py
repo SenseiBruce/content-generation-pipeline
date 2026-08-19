@@ -96,7 +96,7 @@ def _create_caption_image(text: str, out_path: Path):
 
     y = int(H * 0.83) - total_height // 2
 
-    max_w = 0
+    max_w = 0.0
     for line in lines:
         try:
             left, top, right, bottom = d.textbbox((0, 0), line, font=font)
