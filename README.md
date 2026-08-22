@@ -236,3 +236,11 @@ text file `data/pipeline_metrics.prom` (`pipeline_runs_total`,
 - All API calls go to HTTPS only (Voicebox may be local HTTP on localhost)
 - OpenClaw sandbox restricts file access to the project directory
 - No shell exec is allowed from within the pipeline tasks
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+See [LICENSE](LICENSE).

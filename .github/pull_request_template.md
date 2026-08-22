@@ -1,7 +1,5 @@
 ## Summary
 
-Brief description of the change and why it is needed.
-
 ## Type of change
 
 - [ ] Bug fix
@@ -11,12 +9,8 @@ Brief description of the change and why it is needed.
 
 ## Checklist
 
-- [ ] `pytest --cov=agents --cov=pipeline --disable-socket` passes
-- [ ] `ruff check .` and `ruff format --check .` pass
-- [ ] `mypy agents pipeline` passes
-- [ ] `CHANGELOG.md` updated for user-visible changes
-- [ ] No secrets, tokens, or `client_secret.json` committed
+- [ ] Tests pass locally
+- [ ] CHANGELOG updated if user-visible
+- [ ] No secrets committed
 
 ## Test plan
-
-How did you verify this works?
