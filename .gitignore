@@ -40,3 +40,9 @@ logs/
 
 # macOS
 .DS_Store
+
+# Editor / tooling
+.idea/
+.vscode/
+*.sw?
+.mypy_cache/
