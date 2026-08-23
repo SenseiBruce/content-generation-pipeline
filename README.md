@@ -15,7 +15,7 @@ Autonomous finance news Shorts factory for the **Capital Architects** YouTube ch
 - **Format:** Vertical 1080×1920, ≤60 seconds
 - **Cadence:** Every 6 hours via OpenClaw scheduler
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the offline test workflow (`pytest --disable-socket`), ruff/mypy gates, and branch naming.
+License: [MIT](LICENSE). See [CONTRIBUTING.md](CONTRIBUTING.md) for the offline test workflow (`pytest --disable-socket`), ruff/mypy gates, and branch naming. Release notes live in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -32,6 +32,7 @@ content-generation-pipeline/
 ├── run_pipeline.py       # Main orchestrator
 ├── auth_youtube.py       # One-time OAuth2 authentication
 ├── openclaw_task.yaml    # OpenClaw scheduler config
+├── LICENSE
 ├── CONTRIBUTING.md
 ├── CHANGELOG.md
 ├── requirements.txt
@@ -235,3 +236,11 @@ text file `data/pipeline_metrics.prom` (`pipeline_runs_total`,
 - All API calls go to HTTPS only (Voicebox may be local HTTP on localhost)
 - OpenClaw sandbox restricts file access to the project directory
 - No shell exec is allowed from within the pipeline tasks
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+See [LICENSE](LICENSE).
