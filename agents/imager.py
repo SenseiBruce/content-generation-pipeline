@@ -112,8 +112,9 @@ def _generate_one_image(prompt: str, save_path: Path) -> bool:
 
         except RequestException as e:
             err_text = ""
-            if getattr(e, "response", None) is not None:
-                err_text = e.response.text
+            response = getattr(e, "response", None)
+            if response is not None:
+                err_text = response.text
             wait = 2 ** (attempt + 1)
             log.warning(
                 "Image generation attempt %d/3 failed: %s | Responses: %s — retrying in %ds",
