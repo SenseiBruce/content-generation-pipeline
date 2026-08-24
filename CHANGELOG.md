@@ -4,6 +4,7 @@
 
 ### Added
 - `--dry-run` produces videos locally and skips YouTube upload (and does not mark stories as seen)
+- `--max-stories N` caps how many approved scripts are produced in a run
 
 ## [0.2.0] — 2026-08-19
 
