@@ -9,6 +9,8 @@
 
 - `python3 rerun_approved.py --list` prints a JSON catalog of `data/approved/`.
 
+- WhatsApp `STATUS` prints last-run health from `pipeline.health.inspect_health`.
+
 ## [0.2.0] — 2026-08-19
 
 JSON last-run health, Prometheus metrics, and a mocked orchestrator integration test.
