@@ -74,3 +74,11 @@ def record_run(summary: Dict[str, Any]) -> None:
     _save(state)
     write_run_metrics(entry)
     log.info("Run recorded: %s", entry)
+
+
+def list_runs(limit: int = 20) -> list[dict[str, Any]]:
+    """Return the most recent pipeline run records (newest last)."""
+    runs = _load().get("runs") or []
+    if limit <= 0:
+        return []
+    return list(runs[-limit:])

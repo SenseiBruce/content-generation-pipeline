@@ -146,6 +146,8 @@ python3 run_pipeline.py --dry-run
 python3 run_pipeline.py --max-stories 2
 # WhatsApp bridge: last-run health (ok / unhealthy, age, abort reason)
 python3 whatsapp_listener.py STATUS
+# Recent recorded runs (JSON)
+python3 scripts/list_runs.py --limit 10
 ```
 
 ### Running Individual Agents (for debugging)

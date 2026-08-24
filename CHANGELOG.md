@@ -11,6 +11,8 @@
 
 - WhatsApp `STATUS` prints last-run health from `pipeline.health.inspect_health`.
 
+- `python3 scripts/list_runs.py` prints recent `data/pipeline_state.json` run records as JSON.
+
 ## [0.2.0] — 2026-08-19
 
 JSON last-run health, Prometheus metrics, and a mocked orchestrator integration test.
