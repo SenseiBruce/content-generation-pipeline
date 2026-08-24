@@ -27,9 +27,7 @@ def last_run_from_state(payload: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Export the last recorded pipeline run as JSON"
-    )
+    parser = argparse.ArgumentParser(description="Export the last recorded pipeline run as JSON")
     parser.add_argument(
         "--state-file",
         default=str(DEFAULT_STATE),
