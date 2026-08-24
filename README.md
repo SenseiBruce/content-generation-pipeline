@@ -240,6 +240,10 @@ python3 scripts/list_seen.py
 ```
 
 `list_seen.py` prints `{"seen_hashes": [...]}` from `data/pipeline_state.json`.
+python3 scripts/count_runs.py
+```
+
+`count_runs.py` prints `{"runs": N}` from `data/pipeline_state.json`.
 
 Each `record_run` also writes `data/pipeline_metrics.json` and a Prometheus
 text file `data/pipeline_metrics.prom` (`pipeline_runs_total`,
