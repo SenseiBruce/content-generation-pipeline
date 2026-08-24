@@ -228,6 +228,10 @@ python3 scripts/export_last_run.py
 ```
 
 `export_last_run.py` prints the most recent `runs[]` record from `data/pipeline_state.json` as JSON.
+python3 scripts/summarize_runs.py
+```
+
+`summarize_runs.py` prints `{ "total", "by_status" }` from `data/pipeline_state.json`.
 
 Each `record_run` also writes `data/pipeline_metrics.json` and a Prometheus
 text file `data/pipeline_metrics.prom` (`pipeline_runs_total`,
