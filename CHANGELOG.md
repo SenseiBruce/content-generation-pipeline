@@ -14,6 +14,7 @@
 - `python3 scripts/list_runs.py` prints recent `data/pipeline_state.json` run records as JSON.
 - `python3 scripts/export_last_run.py` prints the latest recorded run from `data/pipeline_state.json`.
 - `python3 scripts/summarize_runs.py` counts recorded pipeline runs by status.
+- `scripts/count_seen.py` prints how many `seen_hashes` are recorded in `data/pipeline_state.json`
 
 ## [0.2.0] — 2026-08-19
 
