@@ -19,6 +19,8 @@
 - `scripts/count_runs.py` prints how many `runs` are recorded in `data/pipeline_state.json`
 - `scripts/total_videos_uploaded.py` sums `videos_produced` / `videos_uploaded` across pipeline runs
 
+- CLI `scripts/total_scripts_approved.py` sums `scripts_approved` across recorded runs.
+
 ## [0.2.0] — 2026-08-19
 
 JSON last-run health, Prometheus metrics, and a mocked orchestrator integration test.
