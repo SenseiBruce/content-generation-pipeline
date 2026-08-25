@@ -27,6 +27,8 @@
 
 - `scripts/total_scripts_generated.py` prints the sum of `scripts_generated` from `pipeline_state.json`.
 
+- `scripts/total_stories_prioritized.py` prints the sum of `stories_prioritized`.
+
 ## [0.2.0] — 2026-08-19
 
 JSON last-run health, Prometheus metrics, and a mocked orchestrator integration test.
