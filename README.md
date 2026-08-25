@@ -244,6 +244,10 @@ python3 scripts/count_runs.py
 ```
 
 `count_runs.py` prints `{"runs": N}` from `data/pipeline_state.json`.
+python3 scripts/total_videos_uploaded.py
+```
+
+`total_videos_uploaded.py` prints `{"videos_produced": N, "videos_uploaded": M, "runs_with_uploads": K}`.
 
 Each `record_run` also writes `data/pipeline_metrics.json` and a Prometheus
 text file `data/pipeline_metrics.prom` (`pipeline_runs_total`,
