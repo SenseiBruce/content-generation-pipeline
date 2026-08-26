@@ -29,6 +29,7 @@
 
 - `scripts/total_stories_prioritized.py` prints the sum of `stories_prioritized`.
 - `scripts/total_videos_produced.py` sums `videos_produced` across pipeline runs
+- `scripts/last_run_status.py` prints the most recent run `status` and `timestamp`
 
 ## [0.2.0] — 2026-08-19
 
