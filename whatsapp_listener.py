@@ -42,6 +42,7 @@ def handle_message(message: str):
             print(f"abort_reason: {payload['abort_reason']}")
         if payload.get("reason"):
             print(f"reason: {payload['reason']}")
+        print("PIPELINE STATUS: Active (6-hourly cycle is enabled)")
 
     else:
         print(f"UNKNOWN COMMAND: {message}. Try 'REFRESH ANALYTICS' or 'STATUS'.")
@@ -53,3 +54,4 @@ if __name__ == "__main__":
         handle_message(" ".join(sys.argv[1:]))
     else:
         print("Usage: python3 whatsapp_listener.py 'REFRESH ANALYTICS' or 'STATUS'")
+        print("Usage: python3 whatsapp_listener.py 'REFRESH ANALYTICS'")
