@@ -28,6 +28,7 @@
 - `scripts/total_scripts_generated.py` prints the sum of `scripts_generated` from `pipeline_state.json`.
 
 - `scripts/total_stories_prioritized.py` prints the sum of `stories_prioritized`.
+- `scripts/total_videos_produced.py` sums `videos_produced` across pipeline runs
 
 ## [0.2.0] — 2026-08-19
 
