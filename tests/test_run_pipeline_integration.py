@@ -86,6 +86,47 @@ def test_run_pipeline_dry_run_skips_upload(monkeypatch, tmp_path: Path):
     assert summary["videos_produced"] == 1
     assert summary["videos_uploaded"] == 0
     assert summary["dry_run"] is True
+def test_run_pipeline_max_stories_caps_production(monkeypatch, tmp_path: Path):
+    state_file = _patch_state(monkeypatch, tmp_path)
+    script_one = make_valid_script(project_name="one")
+    script_two = make_valid_script(
+        project_name="two",
+        metadata={**make_valid_script()["metadata"], "story_hash": "def456"},
+    )
+    scenes = script_one["scenes"]
+    image_map = {scene["id"]: tmp_path / f"img_{scene['id']}.png" for scene in scenes}
+    audio_map = {scene["id"]: tmp_path / f"aud_{scene['id']}.wav" for scene in scenes}
+    produced: list[str] = []
+
+    monkeypatch.setattr(
+        run_pipeline,
+        "fetch_all_news",
+        lambda: [
+            {"hash": "abc123", "title": "RBI", "link": "https://example.com/rbi"},
+            {"hash": "def456", "title": "SEBI", "link": "https://example.com/sebi"},
+        ],
+    )
+    monkeypatch.setattr(run_pipeline, "prioritize", lambda stories: stories)
+    monkeypatch.setattr(run_pipeline, "generate_all", lambda stories: [script_one, script_two])
+    monkeypatch.setattr(run_pipeline, "judge_all", lambda scripts: ([script_one, script_two], []))
+    monkeypatch.setattr(run_pipeline, "generate_images", lambda s: image_map)
+    monkeypatch.setattr(run_pipeline, "synthesize_all", lambda s: audio_map)
+    monkeypatch.setattr(
+        run_pipeline,
+        "stitch_video",
+        lambda s, images, audio: produced.append(s["project_name"]) or (tmp_path / "final.mp4"),
+    )
+    monkeypatch.setattr(run_pipeline, "upload_video", lambda path, s: "ytid123")
+    monkeypatch.setattr(run_pipeline, "pull_and_analyze", lambda: True)
+
+    run_pipeline.run_pipeline(max_stories=1)
+
+    summary = _last_run(state_file)
+    assert summary["status"] == "success"
+    assert summary["scripts_approved"] == 2
+    assert summary["max_stories"] == 1
+    assert summary["videos_produced"] == 1
+    assert produced == ["one"]
 
 
 def test_run_pipeline_idle_when_watchtower_empty(monkeypatch, tmp_path: Path):

@@ -142,6 +142,8 @@ python3 run_pipeline.py
 
 # Produce videos but skip YouTube upload
 python3 run_pipeline.py --dry-run
+# Produce at most 2 approved videos this run
+python3 run_pipeline.py --max-stories 2
 ```
 
 ### Running Individual Agents (for debugging)

@@ -96,6 +96,7 @@ def _abort(reason: str, summary: dict) -> None:
 # Main pipeline
 # ─────────────────────────────────────────────────────────────────────────────
 def run_pipeline(dry_run: bool = False) -> None:
+def run_pipeline(max_stories: int | None = None) -> None:
     run_id = uuid.uuid4().hex[:12]
     log.info(
         "Capital Architects pipeline starting — %s",
@@ -183,6 +184,24 @@ def run_pipeline(dry_run: bool = False) -> None:
         return
 
     log.info("%d script(s) approved.", len(approved_scripts))
+
+    if max_stories is not None:
+        summary["max_stories"] = max_stories
+        if max_stories < 1:
+            log.warning("--max-stories must be >= 1; producing nothing this run.")
+            approved_scripts = []
+        elif max_stories < len(approved_scripts):
+            log.info(
+                "Capping production at %d of %d approved script(s) (--max-stories).",
+                max_stories,
+                len(approved_scripts),
+            )
+            approved_scripts = approved_scripts[:max_stories]
+
+    if not approved_scripts:
+        summary["status"] = "success"
+        record_run(summary)
+        return
 
     # ── STAGE 5-7: Produce Videos (per approved script) ────────────────────
     for idx, script in enumerate(approved_scripts, start=1):
@@ -304,6 +323,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
     try:
         run_pipeline(dry_run=args.dry_run)
+        "--max-stories",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Produce at most N approved videos this run",
+    )
+    args = parser.parse_args()
+    if args.max_stories is not None and args.max_stories < 1:
+        parser.error("--max-stories must be >= 1")
+    try:
+        run_pipeline(max_stories=args.max_stories)
     except KeyboardInterrupt:
         log.warning("Pipeline interrupted by user.")
         sys.exit(0)
