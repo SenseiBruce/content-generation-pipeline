@@ -41,6 +41,8 @@
 
 - `scripts/last_run_prioritized.py` prints the most recent run `stories_prioritized`.
 
+- `scripts/last_run_generated.py` prints the most recent run `scripts_generated`.
+
 ## [0.2.0] — 2026-08-19
 
 JSON last-run health, Prometheus metrics, and a mocked orchestrator integration test.
