@@ -33,6 +33,7 @@
 - `scripts/last_run_elapsed.py` prints `elapsed_seconds` for the most recent run
 - `scripts/last_run_stories.py` prints `stories_fetched` for the most recent run
 - `scripts/last_run_videos.py` prints `videos_produced` for the most recent run
+- `scripts/last_run_uploaded.py` prints `videos_uploaded` for the most recent run
 
 ## [0.2.0] — 2026-08-19
 

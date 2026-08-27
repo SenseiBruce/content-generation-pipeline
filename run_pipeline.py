@@ -97,6 +97,7 @@ def _abort(reason: str, summary: dict) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 def run_pipeline(dry_run: bool = False) -> None:
 def run_pipeline(max_stories: int | None = None) -> None:
+def run_pipeline() -> None:
     run_id = uuid.uuid4().hex[:12]
     log.info(
         "Capital Architects pipeline starting — %s",
@@ -334,6 +335,8 @@ if __name__ == "__main__":
         parser.error("--max-stories must be >= 1")
     try:
         run_pipeline(max_stories=args.max_stories)
+    try:
+        run_pipeline()
     except KeyboardInterrupt:
         log.warning("Pipeline interrupted by user.")
         sys.exit(0)
