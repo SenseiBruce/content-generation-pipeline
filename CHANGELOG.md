@@ -35,6 +35,8 @@
 - `scripts/last_run_videos.py` prints `videos_produced` for the most recent run
 - `scripts/last_run_uploaded.py` prints `videos_uploaded` for the most recent run
 
+- CLI `scripts/last_run_approved.py` prints `scripts_approved` for the latest pipeline run.
+
 ## [0.2.0] — 2026-08-19
 
 JSON last-run health, Prometheus metrics, and a mocked orchestrator integration test.
