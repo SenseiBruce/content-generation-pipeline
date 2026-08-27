@@ -39,6 +39,8 @@
 
 - CLI `scripts/last_run_rejected.py` prints `scripts_rejected` for the latest pipeline run.
 
+- `scripts/last_run_prioritized.py` prints the most recent run `stories_prioritized`.
+
 ## [0.2.0] — 2026-08-19
 
 JSON last-run health, Prometheus metrics, and a mocked orchestrator integration test.
