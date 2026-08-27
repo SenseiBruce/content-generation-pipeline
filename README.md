@@ -139,6 +139,9 @@ source .venv/bin/activate
 
 # Run the full pipeline once
 python3 run_pipeline.py
+
+# Produce videos but skip YouTube upload
+python3 run_pipeline.py --dry-run
 ```
 
 ### Running Individual Agents (for debugging)

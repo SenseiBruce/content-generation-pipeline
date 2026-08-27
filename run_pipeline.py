@@ -95,7 +95,7 @@ def _abort(reason: str, summary: dict) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 # Main pipeline
 # ─────────────────────────────────────────────────────────────────────────────
-def run_pipeline() -> None:
+def run_pipeline(dry_run: bool = False) -> None:
     run_id = uuid.uuid4().hex[:12]
     log.info(
         "Capital Architects pipeline starting — %s",
@@ -226,6 +226,14 @@ def run_pipeline() -> None:
 
         summary["videos_produced"] += 1
 
+        if dry_run:
+            log.info(
+                "Dry run: skipping YouTube upload. Video saved locally at: %s",
+                final_video_path,
+            )
+            summary["dry_run"] = True
+            continue
+
         # ── STAGE 8: Upload to YouTube ──────────────────────────────────────
         if not _check_time_budget(f"publisher [{project_name}]", run_id):
             _abort("Time exceeded before upload", summary)
@@ -285,8 +293,17 @@ def run_pipeline() -> None:
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Capital Architects Shorts pipeline")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Produce videos locally but skip YouTube upload and seen-story marking",
+    )
+    args = parser.parse_args()
     try:
-        run_pipeline()
+        run_pipeline(dry_run=args.dry_run)
     except KeyboardInterrupt:
         log.warning("Pipeline interrupted by user.")
         sys.exit(0)

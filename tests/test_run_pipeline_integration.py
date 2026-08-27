@@ -56,6 +56,38 @@ def test_run_pipeline_success_records_summary(monkeypatch, tmp_path: Path):
     assert summary["videos_uploaded"] == 1
 
 
+def test_run_pipeline_dry_run_skips_upload(monkeypatch, tmp_path: Path):
+    state_file = _patch_state(monkeypatch, tmp_path)
+    script = make_valid_script()
+    scenes = script["scenes"]
+    image_map = {scene["id"]: tmp_path / f"img_{scene['id']}.png" for scene in scenes}
+    audio_map = {scene["id"]: tmp_path / f"aud_{scene['id']}.wav" for scene in scenes}
+    story = {"hash": "dry123", "title": "SEBI circular", "link": "https://example.com/sebi"}
+
+    monkeypatch.setattr(run_pipeline, "fetch_all_news", lambda: [story])
+    monkeypatch.setattr(run_pipeline, "prioritize", lambda stories: stories)
+    monkeypatch.setattr(run_pipeline, "generate_all", lambda stories: [script])
+    monkeypatch.setattr(run_pipeline, "judge_all", lambda scripts: ([script], []))
+    monkeypatch.setattr(run_pipeline, "generate_images", lambda s: image_map)
+    monkeypatch.setattr(run_pipeline, "synthesize_all", lambda s: audio_map)
+    monkeypatch.setattr(
+        run_pipeline, "stitch_video", lambda s, images, audio: tmp_path / "final.mp4"
+    )
+
+    def _should_not_upload(*_args, **_kwargs):
+        raise AssertionError("dry-run must not upload")
+
+    monkeypatch.setattr(run_pipeline, "upload_video", _should_not_upload)
+
+    run_pipeline.run_pipeline(dry_run=True)
+
+    summary = _last_run(state_file)
+    assert summary["status"] == "success"
+    assert summary["videos_produced"] == 1
+    assert summary["videos_uploaded"] == 0
+    assert summary["dry_run"] is True
+
+
 def test_run_pipeline_idle_when_watchtower_empty(monkeypatch, tmp_path: Path):
     """No new RSS items is a successful idle run, not an abort (no webhook)."""
     state_file = _patch_state(monkeypatch, tmp_path)
