@@ -224,7 +224,10 @@ within 8 hours; exit 1 if missing, stale, or aborted):
 
 ```bash
 ./scripts/health_check.sh
+python3 scripts/export_last_run.py
 ```
+
+`export_last_run.py` prints the most recent `runs[]` record from `data/pipeline_state.json` as JSON.
 
 Each `record_run` also writes `data/pipeline_metrics.json` and a Prometheus
 text file `data/pipeline_metrics.prom` (`pipeline_runs_total`,
