@@ -162,6 +162,14 @@ python3 -m agents.scriptwriter
 python3 -m agents.judge
 ```
 
+Re-render a previously approved script without rerunning the whole pipeline:
+
+```bash
+python3 rerun_approved.py --list
+python3 rerun_approved.py <story_hash_or_filename>
+python3 rerun_approved.py <story_hash_or_filename> --upload
+```
+
 ---
 
 ## Tests
