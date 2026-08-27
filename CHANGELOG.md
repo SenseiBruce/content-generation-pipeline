@@ -21,6 +21,8 @@
 
 - CLI `scripts/total_scripts_approved.py` sums `scripts_approved` across recorded runs.
 
+- CLI `scripts/total_stories_fetched.py` sums `stories_fetched` across recorded runs.
+
 ## [0.2.0] — 2026-08-19
 
 JSON last-run health, Prometheus metrics, and a mocked orchestrator integration test.
