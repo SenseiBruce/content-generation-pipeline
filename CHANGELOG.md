@@ -37,6 +37,8 @@
 
 - CLI `scripts/last_run_approved.py` prints `scripts_approved` for the latest pipeline run.
 
+- CLI `scripts/last_run_rejected.py` prints `scripts_rejected` for the latest pipeline run.
+
 ## [0.2.0] — 2026-08-19
 
 JSON last-run health, Prometheus metrics, and a mocked orchestrator integration test.
