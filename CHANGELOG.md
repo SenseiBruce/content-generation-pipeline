@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- `scripts/list_losing_keywords.py` lists `losing_keywords` from `data/analytics_feedback.json`
 - `scripts/count_winning_keywords.py` prints how many `winning_keywords` are in `data/analytics_feedback.json`
 - `--dry-run` produces videos locally and skips YouTube upload (and does not mark stories as seen)
 - `--max-stories N` caps how many approved scripts are produced in a run
