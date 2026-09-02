@@ -6,4 +6,4 @@ pytest-socket==0.7.0
 ruff==0.6.9
 pip-tools==7.6.1
 mypy==1.11.2
-types-requests==2.32.0.20240907
+types-requests==2.33.0.20260712
