@@ -7,7 +7,7 @@ requests==2.33.0
 python-dotenv==1.2.2
 
 # ── Structured validation ────────────────────────────────────────────────────
-pydantic==2.9.2
+pydantic==2.13.5
 
 # ── OpenRouter / LLM ─────────────────────────────────────────────────────────
 # (OpenRouter is accessed via pipeline.http_client using the standard OpenAI
